@@ -1,0 +1,1391 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Unix-like operační systémy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: přehled kapitol (dashboard) → jedna kapitola na obrazovku, mřížka 12 sloupců s průsvitnými panely.
+   Design: vizuální systém VOŠ, SPŠ a SOŠ Varnsdorf — jeden tmavý svět (záměrně bez světlého režimu). */
+:root{
+  color-scheme:dark;
+  --bg1:#003b4b;--bg2:#006783;--panel:rgba(0,27,34,.48);--panel-2:rgba(0,0,0,.2);
+  --cyan:#41d7ff;--blue:#00c0f3;--yellow:#ffd400;--green:#a6ce39;--red:#ff7a6b;
+  --muted:rgba(255,255,255,.62);--white:#fff;--line:rgba(255,255,255,.1);
+  --code-bg:#001820;--code-fg:#eaffff;--code-hl:#ffea80;
+  --font:Raleway,"Segoe UI",system-ui,sans-serif;
+  --mono:Consolas,"Cascadia Mono","DejaVu Sans Mono",Menlo,monospace;
+}
+*{box-sizing:border-box;min-width:0}
+html{scroll-behavior:smooth;overflow-x:hidden}
+body{margin:0;font-family:var(--font);color:var(--white);background:var(--bg1);
+  background:linear-gradient(180deg,var(--bg1),var(--bg2)) fixed;line-height:1.45;font-size:15px;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(circle at 85% 10%,rgba(65,215,255,.12),transparent 30%),
+  radial-gradient(circle at 10% 90%,rgba(166,206,57,.08),transparent 30%)}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+
+/* horní lišta */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:rgba(0,30,38,.82);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line)}
+.bar-in{max-width:1450px;margin:auto;padding:.55rem 5vw;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.brand{color:#fff;text-decoration:none;font-weight:800;letter-spacing:.04em;font-size:.82rem;text-transform:uppercase}
+.brand span{color:var(--cyan)}
+.bar-ch{color:var(--muted);font-size:.78rem;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-nav{display:flex;gap:.35rem}
+.btn{display:inline-flex;align-items:center;gap:.35rem;color:#fff;text-decoration:none;background:rgba(0,20,26,.55);
+  padding:.42rem .7rem;font-size:.75rem;font-weight:600;letter-spacing:.04em;border:1px solid transparent;cursor:pointer;font-family:inherit}
+.btn:hover{background:rgba(65,215,255,.15);color:var(--cyan)}
+.btn:focus-visible,a:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+.btn[aria-disabled="true"]{opacity:.35;pointer-events:none}
+
+/* společné */
+.wrap{position:relative;z-index:1;max-width:1450px;margin:auto;padding-inline:5vw}
+header.hero{padding-block:3rem 1.5rem}
+.kicker{color:var(--cyan);font-size:.78rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+h1{font-size:clamp(2.2rem,5vw,4.5rem);line-height:1.05;margin:.35rem 0 .7rem;letter-spacing:-.03em;text-wrap:balance;font-weight:800}
+.lead{font-size:clamp(1rem,1.6vw,1.25rem);font-weight:200;max-width:62ch;color:rgba(255,255,255,.9);margin:0}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:1rem;margin-bottom:1rem}
+.card{background:var(--panel);backdrop-filter:blur(12px);padding:1.25rem 1.35rem}
+.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+h2{font-size:1.1rem;margin:0 0 .85rem;color:var(--cyan);text-wrap:balance}
+h3{font-size:.82rem;margin:.9rem 0 .35rem;color:var(--yellow);letter-spacing:.06em;text-transform:uppercase}
+h3:first-child{margin-top:0}
+p{margin:.35rem 0 .65rem;overflow-wrap:anywhere}
+.muted{color:var(--muted);font-size:.82rem}
+ul,ol{margin:.4rem 0 0;padding-left:1.15rem} li{margin:.25rem 0}
+.tag{display:inline-block;padding:.18rem .45rem;margin:.12rem;background:rgba(65,215,255,.1);color:var(--cyan);font-size:.72rem;font-family:var(--mono)}
+.tag.g{background:rgba(166,206,57,.12);color:var(--green)}
+.tag.y{background:rgba(255,212,0,.1);color:var(--yellow)}
+pre{margin:.5rem 0 0;padding:.75rem .85rem;background:var(--code-bg);color:var(--code-fg);overflow:auto;font:.78rem/1.55 var(--mono);tab-size:4}
+pre .pr{color:var(--green);user-select:none}
+pre .cm{color:#7fb3c2;font-style:italic}
+pre .out{color:rgba(234,255,255,.62)}
+code{font-family:var(--mono);color:var(--code-hl);font-size:.92em}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+th{text-align:left;color:var(--cyan);padding:.45rem;border-bottom:1px solid var(--line);font-weight:700}
+td{padding:.45rem;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top;overflow-wrap:anywhere}
+.perms{font-family:var(--mono);font-size:1rem;color:var(--yellow)}
+.callout{border-left:4px solid var(--yellow);background:rgba(255,212,0,.07);padding:.7rem .85rem;font-size:.84rem;margin-top:.75rem}
+.callout.warn{border-color:var(--red);background:rgba(255,122,107,.08)}
+.callout.ok{border-color:var(--green);background:rgba(166,206,57,.08)}
+.syntax{font-family:var(--mono);font-size:1rem;background:var(--panel-2);padding:.7rem .85rem;border-left:3px solid var(--cyan);overflow-x:auto;white-space:nowrap}
+.syntax b{color:#fff}.syntax i{color:var(--cyan);font-style:normal}.syntax em{color:var(--yellow);font-style:normal}
+.arch{display:grid;gap:.35rem}.layer{padding:.55rem .75rem;background:var(--panel-2);border-left:3px solid var(--cyan)}
+.layer:nth-child(2){border-color:var(--blue)}.layer:nth-child(3){border-color:var(--green)}.layer:nth-child(4){border-color:var(--yellow)}.layer:nth-child(5){border-color:var(--muted)}
+.layer b{display:block;font-size:.82rem}.layer span{font-size:.74rem;color:var(--muted)}
+.timeline{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem}.time{background:var(--panel-2);padding:.65rem}.time b{color:var(--yellow);font-size:.78rem}.time div{font-size:.78rem;margin-top:.25rem}
+.steps{list-style:none;padding:0;margin:0;display:grid;gap:.45rem;counter-reset:s}
+.steps li{counter-increment:s;display:grid;grid-template-columns:2rem 1fr;gap:.6rem;align-items:start;margin:0;background:var(--panel-2);padding:.55rem .65rem;font-size:.84rem}
+.steps li:before{content:counter(s);font-weight:800;color:var(--bg1);background:var(--cyan);width:1.6rem;height:1.6rem;display:grid;place-items:center;font-size:.8rem}
+.kbd{font-family:var(--mono);font-size:.78rem;background:rgba(255,255,255,.1);border-bottom:2px solid rgba(255,255,255,.25);padding:.05rem .35rem;color:#fff;white-space:nowrap}
+.modes{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem}
+.mode{background:var(--panel-2);padding:.65rem;border-top:3px solid var(--cyan)}
+.mode:nth-child(2){border-color:var(--green)}.mode:nth-child(3){border-color:var(--yellow)}.mode:nth-child(4){border-color:var(--blue)}
+.mode b{display:block;font-size:.85rem}.mode span{font-size:.76rem;color:var(--muted)}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;font-family:var(--mono);font-size:.8rem;margin:.4rem 0}
+.flow span{background:var(--panel-2);padding:.35rem .55rem;border:1px solid var(--line)}
+.flow i{color:var(--yellow);font-style:normal;font-weight:700}
+
+/* dashboard */
+.dash-meta{display:flex;flex-wrap:wrap;gap:1.5rem;margin-top:1.4rem;font-size:.8rem;color:var(--muted)}
+.dash-meta b{display:block;color:#fff;font-size:1.5rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.part{margin-top:1.6rem}
+.part-h{display:flex;align-items:baseline;gap:.8rem;margin:0 0 .7rem;flex-wrap:wrap}
+.part-h h2{margin:0;font-size:.82rem;letter-spacing:.16em;text-transform:uppercase;color:var(--yellow)}
+.part-h span{color:var(--muted);font-size:.8rem}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem}
+.tile{display:flex;flex-direction:column;gap:.45rem;text-decoration:none;color:#fff;background:var(--panel);backdrop-filter:blur(12px);
+  padding:1.1rem 1.2rem 1rem;border-bottom:3px solid transparent;transition:background .15s,border-color .15s,transform .15s}
+.tile:hover{background:rgba(0,27,34,.7);border-color:var(--cyan);transform:translateY(-2px)}
+.tile .n{font-size:2.2rem;font-weight:200;color:var(--cyan);line-height:1;font-variant-numeric:tabular-nums}
+.tile .t{font-weight:700;font-size:1rem;line-height:1.25;text-wrap:balance}
+.tile .d{font-size:.8rem;color:var(--muted);flex:1}
+.tile .k{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.2rem}
+.tile .k span{font-family:var(--mono);font-size:.68rem;color:var(--code-hl);background:rgba(0,0,0,.25);padding:.12rem .38rem}
+.p2 .tile .n{color:var(--green)} .p2 .tile:hover{border-color:var(--green)}
+.p3 .tile .n{color:var(--yellow)} .p3 .tile:hover{border-color:var(--yellow)}
+.hint{margin-top:1.4rem;font-size:.8rem;color:var(--muted)}
+
+/* kapitola */
+.ch-head{padding-block:2.4rem 1.3rem}
+.ch-head h1{font-size:clamp(2rem,4.4vw,3.8rem)}
+.pager{display:flex;justify-content:space-between;gap:.6rem;flex-wrap:wrap;padding-block:.6rem 2.5rem}
+.pager a{max-width:48%}
+.pager .next{margin-left:auto;text-align:right}
+.pager small{display:block;color:var(--muted);font-weight:400;letter-spacing:0;font-size:.7rem}
+footer{position:relative;z-index:1;max-width:1450px;margin:auto;padding:0 5vw 2rem;color:var(--muted);font-size:.7rem}
+
+@media(max-width:950px){
+  .c3,.c4,.c5,.c6,.c7,.c8{grid-column:span 6}
+}
+@media(max-width:720px){
+  .c3,.c4,.c5,.c6,.c7,.c8,.c12{grid-column:span 12}
+  .modes,.timeline{grid-template-columns:1fr}
+  .grid{gap:.75rem}.card{padding:1rem}
+  .bar-ch{display:none}
+  .pager a{max-width:100%;flex:1 1 100%}.pager .next{text-align:left}
+}
+@media print{.bar,.pager{display:none}}
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="bar-in">
+  <a class="brand" href="#prehled">Unix-like <span>OS</span></a>
+  <div class="bar-ch" id="barTitle">Přehled kapitol</div>
+  <div class="bar-nav">
+    <a class="btn" id="barPrev" href="#prehled" aria-label="Předchozí kapitola">←</a>
+    <a class="btn" href="#prehled">Přehled</a>
+    <a class="btn" id="barNext" href="#k1" aria-label="Další kapitola">→</a>
+  </div>
+</div></div>
+
+<!-- ============ DASHBOARD ============ -->
+<section id="prehled" class="view wrap" data-title="Přehled kapitol">
+  <header class="hero">
+    <div class="kicker">Úvod do operačních systémů</div>
+    <h1>Unix-like<br>operační systémy</h1>
+    <p class="lead">Od principů Unixu přes výběr a instalaci distribuce až po každodenní práci v bashi a správu Debianu. Kapitoly na sebe navazují; každá kapitola s bashem ukazuje základní syntaxi a příklady.</p>
+    <div class="dash-meta">
+      <div><b>12</b>kapitol</div>
+      <div><b>3</b>tematické bloky</div>
+      <div><b>Debian 13</b>referenční distribuce</div>
+    </div>
+  </header>
+
+  <div class="part p1">
+    <div class="part-h"><h2>Základy</h2><span>co to je, z čeho vybírat a jak to nainstalovat</span></div>
+    <div class="tiles">
+      <a class="tile" href="#k1"><span class="n">01</span><span class="t">Unix-like operační systémy</span><span class="d">Kernel, procesy, shell, historie, oprávnění a strom souborového systému.</span><span class="k"><span>kernel</span><span>daemon</span><span>/</span></span></a>
+      <a class="tile" href="#k2"><span class="n">02</span><span class="t">Distribuce, jejich užití a GUI</span><span class="d">Rodiny distribucí, model vydávání, účel nasazení, desktopová prostředí.</span><span class="k"><span>Debian</span><span>RHEL</span><span>Arch</span><span>GNOME</span></span></a>
+      <a class="tile" href="#k3"><span class="n">03</span><span class="t">Instalace a konfigurace</span><span class="d">Live USB, VM, dual boot, WSL, cloud. Průběh instalace Debianu a první nastavení.</span><span class="k"><span>ISO</span><span>GRUB</span><span>hostnamectl</span></span></a>
+    </div>
+  </div>
+
+  <div class="part p2">
+    <div class="part-h"><h2>Práce v bashi</h2><span>příkazová řádka krok za krokem</span></div>
+    <div class="tiles">
+      <a class="tile" href="#k4"><span class="n">04</span><span class="t">bash a souborový systém</span><span class="d">Syntaxe příkazu, nápověda, cesty a práce se soubory a adresáři.</span><span class="k"><span>ls</span><span>cd</span><span>cp</span><span>find</span></span></a>
+      <a class="tile" href="#k5"><span class="n">05</span><span class="t">Editory nano a vim</span><span class="d">Jak upravit konfigurační soubor přímo v terminálu. Dva přístupy, dvě filozofie.</span><span class="k"><span>nano</span><span>vim</span><span>:wq</span></span></a>
+      <a class="tile" href="#k6"><span class="n">06</span><span class="t">Přesměrování a roury</span><span class="d">stdin, stdout, stderr. Skládání malých nástrojů do řetězců.</span><span class="k"><span>|</span><span>&gt;</span><span>2&gt;&amp;1</span><span>tee</span></span></a>
+      <a class="tile" href="#k7"><span class="n">07</span><span class="t">Regulární výrazy</span><span class="d">grep, sed a vzory. Vytažení údajů z logu nebo z načtené webové stránky.</span><span class="k"><span>grep -E</span><span>sed</span><span>curl</span></span></a>
+    </div>
+  </div>
+
+  <div class="part p3">
+    <div class="part-h"><h2>Správa systému</h2><span>procesy, práva, uživatelé a software</span></div>
+    <div class="tiles">
+      <a class="tile" href="#k8"><span class="n">08</span><span class="t">Procesy a služby</span><span class="d">Sledování procesů, běh na pozadí, signály a ukončení procesu.</span><span class="k"><span>ps</span><span>top</span><span>&amp;</span><span>kill</span></span></a>
+      <a class="tile" href="#k9"><span class="n">09</span><span class="t">Příkazy správce</span><span class="d">Kdy použít sudo, kdy su a jak bezpečně předat administrátorská práva.</span><span class="k"><span>sudo</span><span>su -</span><span>visudo</span></span></a>
+      <a class="tile" href="#k10"><span class="n">10</span><span class="t">Správa uživatelů a skupin</span><span class="d">Vytvoření, úprava, hesla, zamčení a smazání účtu.</span><span class="k"><span>adduser</span><span>usermod</span><span>passwd</span></span></a>
+      <a class="tile" href="#k11"><span class="n">11</span><span class="t">Přidělování a odebírání oprávnění</span><span class="d">chmod, chown, skupiny, speciální bity a ACL.</span><span class="k"><span>chmod</span><span>chown</span><span>setfacl</span></span></a>
+      <a class="tile" href="#k12"><span class="n">12</span><span class="t">Instalace a aktualizace balíčků</span><span class="d">apt, dpkg, repozitáře a automatické bezpečnostní aktualizace.</span><span class="k"><span>apt</span><span>dpkg</span><span>sources</span></span></a>
+    </div>
+  </div>
+  <p class="hint">Při promítání se mezi kapitolami posouváte šipkami <span class="kbd">←</span> <span class="kbd">→</span>, klávesa <span class="kbd">Esc</span> vrací na přehled.</p>
+</section>
+
+<!-- ============ 1 ============ -->
+<section id="k1" class="view wrap chapter" data-title="Unix-like operační systémy">
+<header class="ch-head">
+  <div class="kicker">Kapitola 1 / 12 · Základy</div>
+  <h1>Unix-like operační systémy</h1>
+  <p class="lead">Jak funguje systém, ve kterém většina práce probíhá přes procesy, služby, uživatele, oprávnění a soubory, a proč je Linux tak důležitý pro servery, cloud i vývoj.</p>
+</header>
+<div class="grid">
+  <article class="card c4"><h2>Základní pojmy</h2>
+    <h3>Kernel</h3><p>Jádro OS. Zprostředkuje přístup k CPU, paměti, zařízením a procesům.</p>
+    <h3>Process</h3><p>Běžící program. Má vlastní adresní prostor, PID a oprávnění.</p>
+    <h3>Daemon</h3><p>Proces běžící na pozadí, typicky poskytující službu. Často končí na <code>d</code>: <code>sshd</code>, <code>systemd</code>.</p>
+    <h3>Shell</h3><p>Program, který interpretuje příkazy uživatele. Např. Bash, Zsh.</p>
+  </article>
+  <article class="card c4"><h2>Vrstvy systému</h2>
+    <div class="arch">
+      <div class="layer"><b>APLIKACE</b><span>Firefox · Python · editor · server</span></div>
+      <div class="layer"><b>SHELL &amp; NÁSTROJE</b><span>bash · ls · grep · ssh · systemctl</span></div>
+      <div class="layer"><b>SYSTÉMOVÉ KNIHOVNY / SLUŽBY</b><span>libc · systemd · síťové služby</span></div>
+      <div class="layer"><b>KERNEL</b><span>procesy · paměť · ovladače · souborové systémy · síť</span></div>
+      <div class="layer"><b>HARDWARE</b><span>CPU · RAM · disk · síťová karta · zařízení</span></div>
+    </div>
+  </article>
+  <article class="card c4"><h2>Stručná historie</h2>
+    <div class="timeline">
+      <div class="time"><b>1969</b><div>Vzniká Unix v Bellových laboratořích AT&amp;T.</div></div>
+      <div class="time"><b>1970–80s</b><div>Unix se šíří mezi univerzitami a vznikají jeho varianty.</div></div>
+      <div class="time"><b>1983</b><div>Richard Stallman zahajuje projekt GNU.</div></div>
+      <div class="time"><b>1991</b><div>Linus Torvalds zveřejňuje Linux kernel.</div></div>
+    </div>
+    <p class="muted">Unix-like neznamená „Unix“. Jde o systémy inspirované Unixem nebo implementující podobné principy a rozhraní.</p>
+  </article>
+
+  <article class="card c5"><h2>Kde se s nimi setkáme?</h2>
+    <div class="tbl"><table>
+      <tr><th>Systém</th><th>Typické využití</th></tr>
+      <tr><td>Linux distribuce</td><td>servery, cloud, vývoj, síťová zařízení, desktop</td></tr>
+      <tr><td>Android</td><td>mobily a tablety — používá Linux kernel</td></tr>
+      <tr><td>macOS</td><td>desktop/notebook — Unixový základ (Darwin)</td></tr>
+      <tr><td>FreeBSD / OpenBSD</td><td>servery, síť, bezpečnost, infrastruktura</td></tr>
+    </table></div>
+  </article>
+  <article class="card c7"><h2>Distribuce, balíčky a LTS</h2>
+    <p>Linux není jeden OS. <b>Distribuce</b> spojuje kernel, systémové nástroje, správu balíčků, konfiguraci a aplikace.</p>
+    <div class="tbl"><table>
+      <tr><th>Rodina</th><th>Balíček</th><th>Správce</th><th>Příklad</th></tr>
+      <tr><td>Debian / Ubuntu</td><td><code>.deb</code></td><td><code>apt</code></td><td><code>sudo apt install nginx</code></td></tr>
+      <tr><td>Fedora / RHEL</td><td><code>.rpm</code></td><td><code>dnf</code></td><td><code>sudo dnf install nginx</code></td></tr>
+      <tr><td>Arch</td><td>balíčky Arch</td><td><code>pacman</code></td><td><code>sudo pacman -S nginx</code></td></tr>
+    </table></div>
+    <p class="muted"><b>LTS</b> = Long Term Support. Označuje vydání s delší dobou podpory; není to typ instalačního balíčku. Podrobněji v kapitole 2.</p>
+  </article>
+
+  <article class="card c7"><h2>Linux shell — základní příkazy</h2>
+<pre>$ pwd
+/home/alice
+
+$ ls -la
+drwxr-xr-x 2 alice users 4096 Dokumenty
+-rw-r--r-- 1 alice users  842 poznamky.txt
+
+$ cd Dokumenty
+$ mkdir projekt
+$ cp ../poznamky.txt projekt/
+$ mv projekt/poznamky.txt projekt/readme.txt
+$ rm projekt/readme.txt
+
+$ cat /etc/os-release
+$ grep "NAME" /etc/os-release</pre>
+  </article>
+  <article class="card c5"><h2>Proč shell?</h2>
+    <p>Příkazy lze <b>řetězit</b>, přesměrovat a automatizovat.</p>
+<pre>$ ps aux | grep ssh
+$ cat log.txt | grep ERROR &gt; chyby.txt
+$ chmod +x script.sh
+$ ./script.sh</pre>
+    <div class="callout"><b>Tip:</b> <code>|</code> předá výstup dalšímu příkazu. <code>&gt;</code> zapíše výstup do souboru. Víc v kapitole 6.</div>
+  </article>
+
+  <article class="card c6"><h2>Uživatelé, skupiny a superuser</h2>
+    <p>Každý proces běží pod určitým <b>uživatelem</b>. Uživatel může být členem více <b>skupin</b>. Oprávnění se posuzují jako <b>owner / group / others</b>.</p>
+    <p><span class="tag">root</span> superuser má velmi rozsáhlá oprávnění: může měnit systém, instalovat software, spravovat uživatele i přistupovat k souborům bez běžných omezení.</p>
+    <p><b>sudo</b> umožní oprávněnému uživateli spustit konkrétní příkaz s vyššími právy — bezpečnější než běžně pracovat jako root.</p>
+  </article>
+  <article class="card c6"><h2>Oprávnění v praxi</h2>
+<pre>$ ls -l script.sh
+-rwxr-x--- 1 alice dev 120 script.sh
+ ↑↑↑ ↑↑↑ ↑↑↑
+ owner group others
+
+r = read     4
+w = write    2
+x = execute  1</pre>
+    <p class="muted"><code>rwxr-x---</code> = vlastník čte/zapisuje/spouští, skupina čte/spouští, ostatní nemají práva.</p>
+  </article>
+
+  <article class="card c8"><h2>Souborový systém</h2>
+    <p>V Unix-like systémech je vše organizováno do jediného stromu začínajícího kořenem <code>/</code>. Připojené disky a zařízení se objevují v tomto stromu.</p>
+    <div class="tbl"><table>
+      <tr><th>Cesta</th><th>Význam</th></tr>
+      <tr><td><code>/</code></td><td>kořen celého souborového systému</td></tr>
+      <tr><td><code>/home</code></td><td>domovské adresáře uživatelů</td></tr>
+      <tr><td><code>/etc</code></td><td>konfigurace systému a služeb</td></tr>
+      <tr><td><code>/var</code></td><td>proměnlivá data, logy, cache</td></tr>
+      <tr><td><code>/usr</code></td><td>programy, knihovny a sdílená data</td></tr>
+      <tr><td><code>/tmp</code></td><td>dočasná data</td></tr>
+      <tr><td><code>/dev</code></td><td>souborové rozhraní k zařízením</td></tr>
+    </table></div>
+  </article>
+  <article class="card c4"><h2>Zapamatuj si</h2>
+    <ul>
+      <li><b>Kernel</b> řídí zdroje a hardware.</li>
+      <li><b>Daemon</b> běží na pozadí jako služba.</li>
+      <li><b>Shell</b> interpretuje příkazy.</li>
+      <li><b>Root</b> má privilegovaná oprávnění.</li>
+      <li><b>chmod</b> mění oprávnění.</li>
+      <li><b>/</b> je kořen stromu souborového systému.</li>
+      <li><b>Distribuce</b> není totéž co Linux kernel.</li>
+    </ul>
+  </article>
+
+  <article class="card c7"><h2>„Všechno je soubor“</h2>
+    <p>V Unix-like systémech se se souborovým rozhraním pracuje nejen s běžnými soubory, ale také s adresáři a mnoha zařízeními či speciálními objekty.</p>
+    <div class="tbl"><table>
+      <tr><th>Znak</th><th>Typ</th><th>Příklad</th></tr>
+      <tr><td class="perms">-</td><td>běžný soubor</td><td><code>notes.txt</code>, <code>program.py</code></td></tr>
+      <tr><td class="perms">d</td><td>adresář</td><td><code>/home/alice</code></td></tr>
+      <tr><td class="perms">l</td><td>symbolický odkaz</td><td><code>latest -&gt; release</code></td></tr>
+      <tr><td class="perms">c</td><td>znakové zařízení</td><td><code>/dev/tty</code></td></tr>
+      <tr><td class="perms">b</td><td>blokové zařízení</td><td><code>/dev/sda</code></td></tr>
+      <tr><td class="perms">p</td><td>pojmenovaná roura</td><td>FIFO</td></tr>
+      <tr><td class="perms">s</td><td>socket</td><td>komunikace procesů</td></tr>
+    </table></div>
+    <p class="muted">Nejde o to, že každý objekt je doslova běžný soubor. Unixový princip je, že mnoho různých zdrojů lze ovládat podobným souborovým rozhraním.</p>
+  </article>
+  <article class="card c5"><h2>Jak typ poznám?</h2>
+<pre>$ ls -l
+-rw-r--r--  notes.txt
+drwxr-xr-x  Dokumenty
+lrwxrwxrwx  latest -&gt; release
+crw-rw----  /dev/tty
+
+$ file notes.txt
+notes.txt: UTF-8 Unicode text
+
+$ stat notes.txt</pre>
+    <div class="callout"><b>První znak</b> výstupu <code>ls -l</code> určuje typ objektu. <code>file</code> se pokouší určit obsah běžného souboru.</div>
+  </article>
+</div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="k2" class="view wrap chapter" data-title="Distribuce, jejich užití a GUI">
+<header class="ch-head">
+  <div class="kicker">Kapitola 2 / 12 · Základy</div>
+  <h1>Distribuce, jejich užití a GUI</h1>
+  <p class="lead">Všechny linuxové distribuce sdílí stejné jádro. Liší se tím, co kolem něj poskládají: správcem balíčků, rytmem vydávání, výchozím nastavením a cílovým nasazením.</p>
+</header>
+<div class="grid">
+  <article class="card c7"><h2>Podle rodiny (původu)</h2>
+    <p>Většina distribucí vychází z několika základních. Rodina určuje formát balíčků, správce balíčků a umístění konfigurace.</p>
+    <div class="tbl"><table>
+      <tr><th>Rodina</th><th>Zástupci</th><th>Balíčky</th></tr>
+      <tr><td><b>Debian</b></td><td>Debian, Ubuntu, Linux Mint, Raspberry Pi OS, Kali Linux</td><td><code>apt</code> / <code>.deb</code></td></tr>
+      <tr><td><b>Red Hat</b></td><td>RHEL, Fedora, Rocky Linux, AlmaLinux, CentOS Stream</td><td><code>dnf</code> / <code>.rpm</code></td></tr>
+      <tr><td><b>SUSE</b></td><td>SLES, openSUSE Leap, openSUSE Tumbleweed</td><td><code>zypper</code> / <code>.rpm</code></td></tr>
+      <tr><td><b>Arch</b></td><td>Arch Linux, Manjaro, EndeavourOS</td><td><code>pacman</code></td></tr>
+      <tr><td><b>Nezávislé</b></td><td>Alpine, Gentoo, Slackware, NixOS, Void</td><td><code>apk</code>, <code>emerge</code>, <code>nix</code>…</td></tr>
+    </table></div>
+  </article>
+  <article class="card c5"><h2>Podle modelu vydávání</h2>
+    <h3>Pevná vydání (point release)</h3>
+    <p>Nová verze jednou za čas, mezi verzemi jen opravy. Předvídatelné, vhodné pro servery. <span class="tag">Debian</span><span class="tag">RHEL</span><span class="tag">Ubuntu LTS</span></p>
+    <h3>Průběžná vydání (rolling)</h3>
+    <p>Balíčky se aktualizují průběžně, žádné „velké“ upgrady. Nejnovější software, vyšší riziko nečekané změny. <span class="tag">Arch</span><span class="tag">Tumbleweed</span><span class="tag">Debian testing</span></p>
+    <h3>LTS</h3>
+    <p>Ubuntu LTS má 5 let standardní podpory (s placeným rozšířením víc), Debian stable zhruba 3 roky + 2 roky LTS komunity.</p>
+  </article>
+
+  <article class="card c12"><h2>Podle účelu nasazení</h2>
+    <div class="tbl"><table>
+      <tr><th>Účel</th><th>Typické distribuce</th><th>Proč</th></tr>
+      <tr><td>Server, firma</td><td>Debian, Ubuntu Server, RHEL, Rocky, AlmaLinux, SLES</td><td>dlouhá podpora, stabilita, certifikace, placená podpora u RHEL/SLES</td></tr>
+      <tr><td>Desktop pro začátečníky</td><td>Ubuntu, Linux Mint, Fedora Workstation, Zorin OS</td><td>grafický instalátor, ovladače, „funguje hned“</td></tr>
+      <tr><td>Vývoj a nejnovější software</td><td>Fedora, Arch, openSUSE Tumbleweed</td><td>čerstvé verze jazyků, knihoven a jádra</td></tr>
+      <tr><td>Kontejnery a cloud</td><td>Alpine, Debian slim, Ubuntu Minimal, Fedora CoreOS</td><td>malý obraz (Alpine okolo 5 MB), méně útočných ploch</td></tr>
+      <tr><td>Bezpečnost a penetrační testy</td><td>Kali Linux, Parrot OS, Tails</td><td>předinstalované nástroje, anonymita</td></tr>
+      <tr><td>Jednodeskové počítače, IoT</td><td>Raspberry Pi OS, Armbian, Ubuntu Core</td><td>podpora ARM, nízké nároky</td></tr>
+      <tr><td>Síťová zařízení, routery</td><td>OpenWrt, pfSense/OPNsense (FreeBSD)</td><td>minimální systém, webová správa</td></tr>
+      <tr><td>Výuka a hlubší pochopení</td><td>Arch, Gentoo, Linux From Scratch</td><td>systém se skládá ručně, krok za krokem</td></tr>
+    </table></div>
+  </article>
+
+  <article class="card c4"><h2>Další kritéria</h2>
+    <h3>Init systém</h3><p>Většina používá <code>systemd</code>. Bez něj: Devuan, Alpine (OpenRC), Void (runit).</p>
+    <h3>Komerční × komunitní</h3><p>RHEL a SLES se platí za podporu. Rocky a AlmaLinux jsou bezplatné, binárně kompatibilní s RHEL.</p>
+    <h3>Velikost a nároky</h3><p>Plný desktop potřebuje 2–4 GB RAM. Odlehčené (Lubuntu, antiX) běží i na starém hardwaru.</p>
+  </article>
+  <article class="card c8"><h2>Grafické rozhraní (GUI)</h2>
+    <p>GUI není součástí jádra. Je to vrstvený software, který lze nainstalovat, vyměnit, nebo vůbec nemít (typický server).</p>
+    <div class="arch">
+      <div class="layer"><b>DESKTOPOVÉ PROSTŘEDÍ / SPRÁVCE OKEN</b><span>GNOME · KDE Plasma · Xfce · Cinnamon · MATE · LXQt  |  i3 · Sway</span></div>
+      <div class="layer"><b>DISPLAY MANAGER (přihlašovací obrazovka)</b><span>GDM · SDDM · LightDM</span></div>
+      <div class="layer"><b>ZOBRAZOVACÍ SERVER / PROTOKOL</b><span>Wayland (moderní, výchozí v GNOME a KDE) · X11 / Xorg (starší, stále rozšířený)</span></div>
+      <div class="layer"><b>GRAFICKÝ OVLADAČ V JÁDŘE</b><span>DRM/KMS · Mesa · ovladač NVIDIA</span></div>
+    </div>
+  </article>
+  <article class="card c12"><h2>Desktopová prostředí v kostce</h2>
+    <div class="tbl"><table>
+      <tr><th>Prostředí</th><th>Charakter</th><th>Nároky</th><th>Výchozí v</th></tr>
+      <tr><td><b>GNOME</b></td><td>moderní, minimalistické, ovládání přes „Aktivity“</td><td>vyšší</td><td>Debian, Ubuntu, Fedora</td></tr>
+      <tr><td><b>KDE Plasma</b></td><td>vzhledem blízké Windows, velmi nastavitelné</td><td>střední</td><td>Kubuntu, openSUSE, Fedora KDE</td></tr>
+      <tr><td><b>Cinnamon</b></td><td>klasická nabídka Start a panel</td><td>střední</td><td>Linux Mint</td></tr>
+      <tr><td><b>Xfce</b></td><td>lehké, stabilní, konzervativní</td><td>nízké</td><td>Xubuntu, Kali</td></tr>
+      <tr><td><b>LXQt</b></td><td>velmi lehké</td><td>velmi nízké</td><td>Lubuntu</td></tr>
+      <tr><td><b>i3 / Sway</b></td><td>dlaždicový správce oken, ovládání klávesnicí</td><td>minimální</td><td>volba pokročilých</td></tr>
+    </table></div>
+    <div class="callout"><b>Debian při instalaci</b> nabízí výběr GNOME, KDE Plasma, Xfce, Cinnamon, MATE, LXDE, LXQt nebo žádné GUI. Pro server se GUI neinstaluje a správa probíhá přes SSH.</div>
+  </article>
+</div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="k3" class="view wrap chapter" data-title="Instalace a konfigurace">
+<header class="ch-head">
+  <div class="kicker">Kapitola 3 / 12 · Základy</div>
+  <h1>Instalace a konfigurace</h1>
+  <p class="lead">Linux lze vyzkoušet bez zásahu do počítače, provozovat vedle Windows, ve virtuálním stroji, nebo nasadit na server v cloudu. Způsob volíme podle účelu.</p>
+</header>
+<div class="grid">
+  <article class="card c12"><h2>Možnosti instalace</h2>
+    <div class="tbl"><table>
+      <tr><th>Způsob</th><th>Jak to funguje</th><th>Výhody</th><th>Nevýhody</th></tr>
+      <tr><td><b>Live USB</b></td><td>systém se spustí z flash disku bez instalace</td><td>vyzkoušení, záchrana dat, nic se nemění</td><td>pomalejší, změny se po restartu ztratí</td></tr>
+      <tr><td><b>Virtuální stroj</b></td><td>VirtualBox, VMware, Hyper-V, KVM/QEMU</td><td>bezpečné testování, snapshoty, ideální do výuky</td><td>dělí se o výkon s hostitelem</td></tr>
+      <tr><td><b>WSL 2</b></td><td>Linux uvnitř Windows (<code>wsl --install -d Debian</code>)</td><td>rychlý start, sdílené soubory s Windows</td><td>není plnohodnotný systém, chybí GUI a systemd jen volitelně</td></tr>
+      <tr><td><b>Dual boot</b></td><td>vedle Windows na stejném disku, výběr v zavaděči GRUB</td><td>plný výkon hardwaru</td><td>riziko při dělení disku, Secure Boot, BitLocker</td></tr>
+      <tr><td><b>Čistá instalace</b></td><td>Linux jako jediný systém (bare metal)</td><td>plný výkon, nejjednodušší správa</td><td>přijdeme o předchozí systém</td></tr>
+      <tr><td><b>Cloud / VPS</b></td><td>hotový obraz u poskytovatele, přístup přes SSH</td><td>během minut, veřejná IP</td><td>platí se provoz, bezpečnost je na nás</td></tr>
+      <tr><td><b>Kontejner</b></td><td><code>docker run -it debian:13 bash</code></td><td>okamžité, izolované prostředí aplikace</td><td>sdílí jádro hostitele, není to celý OS</td></tr>
+    </table></div>
+  </article>
+
+  <article class="card c6"><h2>Příprava instalačního média</h2>
+    <ol class="steps">
+      <li><span>Stáhnout obraz z <code>debian.org</code>: <b>netinst</b> (malý, balíčky stahuje ze sítě) nebo <b>DVD</b>.</span></li>
+      <li><span>Ověřit kontrolní součet, že soubor není poškozený ani podvržený.</span></li>
+      <li><span>Zapsat obraz na USB: Rufus nebo balenaEtcher (Windows), <code>dd</code> (Linux).</span></li>
+      <li><span>V UEFI/BIOS nastavit start z USB (často <span class="kbd">F12</span>, <span class="kbd">F2</span> nebo <span class="kbd">Esc</span>).</span></li>
+    </ol>
+<pre>$ sha256sum debian-13.1.0-amd64-netinst.iso
+<span class="out">a1b2c3…  debian-13.1.0-amd64-netinst.iso</span>
+# porovnat se souborem SHA256SUMS na webu
+
+$ sudo dd if=debian-13.1.0-amd64-netinst.iso of=/dev/sdX bs=4M status=progress oflag=sync
+# /dev/sdX = celý flash disk (ověřit přes lsblk!)</pre>
+  </article>
+  <article class="card c6"><h2>Průběh instalace Debianu</h2>
+    <ol class="steps">
+      <li><span>Jazyk, oblast a rozložení klávesnice.</span></li>
+      <li><span>Síť: název počítače (hostname) a doména.</span></li>
+      <li><span>Heslo roota. <b>Když ho necháte prázdné</b>, root se zamkne a první uživatel dostane <code>sudo</code>.</span></li>
+      <li><span>Běžný uživatel: celé jméno, login, heslo.</span></li>
+      <li><span>Rozdělení disku: řízené (celý disk), s LVM, šifrované LVM, nebo ručně.</span></li>
+      <li><span>Zrcadlo archivu balíčků (deb.debian.org).</span></li>
+      <li><span>Výběr softwaru (tasksel): prostředí GUI, SSH server, standardní nástroje.</span></li>
+      <li><span>Instalace zavaděče GRUB a restart.</span></li>
+    </ol>
+  </article>
+
+  <article class="card c5"><h2>Typické rozdělení disku (UEFI)</h2>
+    <div class="tbl"><table>
+      <tr><th>Oddíl</th><th>Velikost</th><th>Souborový systém</th></tr>
+      <tr><td><code>/boot/efi</code></td><td>512 MB – 1 GB</td><td>FAT32 (ESP)</td></tr>
+      <tr><td><code>/</code></td><td>25 GB a víc</td><td>ext4 / btrfs</td></tr>
+      <tr><td><code>/home</code></td><td>zbytek disku</td><td>ext4</td></tr>
+      <tr><td>swap</td><td>podle RAM, 2–8 GB</td><td>swap</td></tr>
+    </table></div>
+    <p class="muted">Samostatný <code>/home</code> umožní přeinstalovat systém bez ztráty uživatelských dat.</p>
+  </article>
+  <article class="card c7"><h2>První konfigurace po instalaci</h2>
+<pre># aktualizace systému
+$ sudo apt update &amp;&amp; sudo apt full-upgrade
+
+# název počítače, čas, jazyk
+$ hostnamectl
+$ sudo hostnamectl set-hostname lab-pc01
+$ sudo timedatectl set-timezone Europe/Prague
+$ localectl status
+
+# síť
+$ ip a                      <span class="cm"># adresy rozhraní</span>
+$ ip r                      <span class="cm"># výchozí brána</span>
+$ nmcli device status       <span class="cm"># s NetworkManagerem (desktop)</span>
+
+# vzdálený přístup a firewall
+$ sudo apt install openssh-server ufw
+$ sudo systemctl enable --now ssh
+$ sudo ufw allow OpenSSH &amp;&amp; sudo ufw enable</pre>
+  </article>
+  <article class="card c12"><h2>Kde je konfigurace</h2>
+    <div class="tbl"><table>
+      <tr><th>Soubor</th><th>Co nastavuje</th></tr>
+      <tr><td><code>/etc/hostname</code>, <code>/etc/hosts</code></td><td>jméno počítače a lokální překlad jmen</td></tr>
+      <tr><td><code>/etc/network/interfaces</code></td><td>síť na serveru bez NetworkManageru (Debian ifupdown)</td></tr>
+      <tr><td><code>/etc/fstab</code></td><td>které oddíly se připojí při startu a kam</td></tr>
+      <tr><td><code>/etc/apt/sources.list.d/debian.sources</code></td><td>repozitáře balíčků (kapitola 12)</td></tr>
+      <tr><td><code>/etc/default/grub</code></td><td>nastavení zavaděče, poté <code>sudo update-grub</code></td></tr>
+      <tr><td><code>/etc/ssh/sshd_config</code></td><td>nastavení SSH serveru</td></tr>
+    </table></div>
+    <div class="callout">Konfigurace v Linuxu je převážně v textových souborech v <code>/etc</code>. K jejich úpravě potřebujeme editor (kapitola 5) a práva správce (kapitola 9).</div>
+  </article>
+</div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="k4" class="view wrap chapter" data-title="bash a souborový systém">
+<header class="ch-head">
+  <div class="kicker">Kapitola 4 / 12 · bash</div>
+  <h1>bash a souborový systém</h1>
+  <p class="lead">Bash je výchozí shell v Debianu. Každý příkaz má stejnou stavbu, a jakmile ji umíme číst, umíme číst i nápovědu ke kterémukoli jinému příkazu.</p>
+</header>
+<div class="grid">
+  <article class="card c7"><h2>Syntaxe příkazu</h2>
+    <div class="syntax"><b>příkaz</b> <i>[-přepínače]</i> <em>[argumenty]</em></div>
+<pre>$ ls -l -a /etc          <span class="cm"># krátké přepínače zvlášť</span>
+$ ls -la /etc            <span class="cm"># … nebo spojené</span>
+$ ls --all --human-readable -l
+$ cp -r zdroj/ cil/      <span class="cm"># argumenty: odkud, kam</span></pre>
+    <h3>Výzva (prompt)</h3>
+<pre>alice@lab-pc01:~/projekt$       <span class="cm"># uživatel@počítač:adresář  $ = běžný uživatel</span>
+root@lab-pc01:/etc#             <span class="cm"># # = root (opatrně!)</span></pre>
+  </article>
+  <article class="card c5"><h2>Nápověda a pomůcky</h2>
+    <div class="tbl"><table>
+      <tr><td><code>man ls</code></td><td>manuálová stránka (<span class="kbd">q</span> konec, <span class="kbd">/</span> hledání)</td></tr>
+      <tr><td><code>ls --help</code></td><td>stručný přehled přepínačů</td></tr>
+      <tr><td><code>type cd</code></td><td>je to vestavěný příkaz, nebo program?</td></tr>
+      <tr><td><code>which python3</code></td><td>kde leží spustitelný soubor</td></tr>
+      <tr><td><span class="kbd">Tab</span></td><td>doplnění příkazu a cesty</td></tr>
+      <tr><td><span class="kbd">↑</span> / <span class="kbd">Ctrl+R</span></td><td>historie / hledání v historii</td></tr>
+      <tr><td><span class="kbd">Ctrl+C</span></td><td>přerušit běžící příkaz</td></tr>
+      <tr><td><span class="kbd">Ctrl+L</span></td><td>vyčistit obrazovku</td></tr>
+    </table></div>
+  </article>
+
+  <article class="card c5"><h2>Cesty</h2>
+    <div class="tbl"><table>
+      <tr><td><code>/etc/ssh</code></td><td><b>absolutní</b> — začíná od kořene <code>/</code></td></tr>
+      <tr><td><code>docs/a.txt</code></td><td><b>relativní</b> — od aktuálního adresáře</td></tr>
+      <tr><td><code>~</code></td><td>domovský adresář (<code>/home/alice</code>)</td></tr>
+      <tr><td><code>.</code></td><td>aktuální adresář</td></tr>
+      <tr><td><code>..</code></td><td>nadřazený adresář</td></tr>
+      <tr><td><code>cd -</code></td><td>zpět do předchozího adresáře</td></tr>
+    </table></div>
+    <h3>Zástupné znaky</h3>
+<pre>$ ls *.txt          <span class="cm"># libovolný počet znaků</span>
+$ ls foto?.jpg      <span class="cm"># právě jeden znak</span>
+$ ls [abc]*         <span class="cm"># začíná a, b nebo c</span>
+$ mkdir -p web/{css,js,img}   <span class="cm"># rozvinutí závorek</span></pre>
+  </article>
+  <article class="card c7"><h2>Navigace a prohlížení</h2>
+<pre>$ pwd                        <span class="cm"># kde jsem</span>
+$ cd /var/log                <span class="cm"># přejít</span>
+$ ls -lh                     <span class="cm"># výpis s čitelnou velikostí</span>
+$ ls -lt                     <span class="cm"># seřadit podle času změny</span>
+$ tree -L 2                  <span class="cm"># strom (apt install tree)</span>
+
+$ cat /etc/hostname          <span class="cm"># vypsat celý soubor</span>
+$ less /var/log/syslog       <span class="cm"># listovat (q = konec)</span>
+$ head -n 5 /etc/passwd      <span class="cm"># prvních 5 řádků</span>
+$ tail -n 20 soubor.log      <span class="cm"># posledních 20 řádků</span>
+$ sudo tail -f /var/log/nginx/access.log   <span class="cm"># sledovat živě</span>
+$ wc -l /etc/passwd          <span class="cm"># počet řádků</span></pre>
+  </article>
+
+  <article class="card c7"><h2>Vytváření, kopírování, přesun, mazání</h2>
+<pre>$ mkdir projekt              <span class="cm"># nový adresář</span>
+$ mkdir -p a/b/c             <span class="cm"># včetně rodičů</span>
+$ touch poznamky.txt         <span class="cm"># prázdný soubor / aktualizace času</span>
+
+$ cp a.txt b.txt             <span class="cm"># kopie souboru</span>
+$ cp -r projekt/ zaloha/     <span class="cm"># kopie adresáře (rekurzivně)</span>
+$ cp -i a.txt b.txt          <span class="cm"># zeptá se před přepsáním</span>
+
+$ mv a.txt docs/             <span class="cm"># přesun</span>
+$ mv stary.txt novy.txt      <span class="cm"># přejmenování</span>
+
+$ rm b.txt                   <span class="cm"># smazat soubor</span>
+$ rmdir prazdny/             <span class="cm"># smazat prázdný adresář</span>
+$ rm -r zaloha/              <span class="cm"># smazat adresář s obsahem</span>
+$ rm -ri zaloha/             <span class="cm"># … s potvrzováním</span></pre>
+    <div class="callout warn"><b>Pozor:</b> <code>rm</code> nemá koš. Co smažeme, je pryč. Před <code>rm -r</code> s hvězdičkou si nejdřív pusťte <code>ls</code> se stejným vzorem.</div>
+  </article>
+  <article class="card c5"><h2>Hledání a odkazy</h2>
+<pre>$ find ~ -name "*.pdf"                 <span class="cm"># podle jména</span>
+$ find /var/log -type f -size +10M     <span class="cm"># soubory nad 10 MB</span>
+$ find . -mtime -1                     <span class="cm"># změněné za 24 h</span>
+$ find /tmp -name "*.tmp" -delete     <span class="cm"># najít a smazat</span>
+
+$ ln -s /var/www/html web    <span class="cm"># symbolický odkaz</span>
+$ ls -l web
+<span class="out">lrwxrwxrwx 1 alice alice 13 web -&gt; /var/www/html</span>
+
+$ du -sh ~/Stažené           <span class="cm"># velikost adresáře</span>
+$ df -h                      <span class="cm"># volné místo na discích</span></pre>
+  </article>
+
+  <article class="card c12"><h2>Uvozovky a proměnné</h2>
+    <div class="grid" style="margin:0">
+      <div class="c6">
+<pre>$ jmeno="Alice"              <span class="cm"># bez mezer kolem =</span>
+$ echo "Ahoj $jmeno"         <span class="cm"># "…" proměnné rozvine</span>
+<span class="out">Ahoj Alice</span>
+$ echo 'Ahoj $jmeno'         <span class="cm"># '…' doslova</span>
+<span class="out">Ahoj $jmeno</span>
+$ echo "Dnes je $(date +%d.%m.%Y)"   <span class="cm"># výstup příkazu</span></pre>
+      </div>
+      <div class="c6">
+<pre>$ echo $HOME $USER $SHELL    <span class="cm"># proměnné prostředí</span>
+$ echo $PATH                 <span class="cm"># kde se hledají příkazy</span>
+$ touch "muj soubor.txt"     <span class="cm"># mezera v názvu → uvozovky</span>
+$ alias ll='ls -lah'         <span class="cm"># zkratka (trvale do ~/.bashrc)</span>
+$ history | tail -5          <span class="cm"># posledních 5 příkazů</span></pre>
+      </div>
+    </div>
+  </article>
+</div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="k5" class="view wrap chapter" data-title="Editory nano a vim">
+<header class="ch-head">
+  <div class="kicker">Kapitola 5 / 12 · bash</div>
+  <h1>Editory nano a vim</h1>
+  <p class="lead">Na serveru bez GUI upravujeme konfiguraci přímo v terminálu. nano je jednoduchý a ovládání vidíme na obrazovce. vim je rychlý pro zkušené a je k dispozici téměř všude.</p>
+</header>
+<div class="grid">
+  <article class="card c5"><h2>nano</h2>
+<pre>$ nano poznamky.txt
+$ sudo nano /etc/hosts        <span class="cm"># systémový soubor</span>
+$ nano -l skript.sh           <span class="cm"># s čísly řádků</span></pre>
+    <p class="muted">Znak <code>^</code> ve spodní liště znamená <span class="kbd">Ctrl</span>, <code>M-</code> znamená <span class="kbd">Alt</span>.</p>
+    <div class="tbl"><table>
+      <tr><th>Klávesy</th><th>Akce</th></tr>
+      <tr><td><span class="kbd">Ctrl+O</span></td><td>uložit (Write Out), potvrdit <span class="kbd">Enter</span></td></tr>
+      <tr><td><span class="kbd">Ctrl+X</span></td><td>ukončit (zeptá se na uložení)</td></tr>
+      <tr><td><span class="kbd">Ctrl+W</span></td><td>hledat</td></tr>
+      <tr><td><span class="kbd">Ctrl+\</span></td><td>najít a nahradit</td></tr>
+      <tr><td><span class="kbd">Ctrl+K</span> / <span class="kbd">Ctrl+U</span></td><td>vyjmout řádek / vložit</td></tr>
+      <tr><td><span class="kbd">Alt+U</span> / <span class="kbd">Alt+E</span></td><td>zpět / znovu</td></tr>
+      <tr><td><span class="kbd">Ctrl+_</span></td><td>skok na řádek</td></tr>
+      <tr><td><span class="kbd">Ctrl+G</span></td><td>nápověda</td></tr>
+    </table></div>
+  </article>
+  <article class="card c7"><h2>vim — režimy</h2>
+    <p>Klíč k vimu: klávesy dělají různé věci podle toho, v jakém režimu jsme. Po spuštění jsme v <b>normálním režimu</b>, kde se nepíše text, ale zadávají příkazy.</p>
+    <div class="modes">
+      <div class="mode"><b>Normální</b><span>pohyb, mazání, kopírování. Návrat odkudkoli: <span class="kbd">Esc</span></span></div>
+      <div class="mode"><b>Vkládací (INSERT)</b><span>psaní textu. Vstup: <span class="kbd">i</span> <span class="kbd">a</span> <span class="kbd">o</span></span></div>
+      <div class="mode"><b>Příkazový</b><span>uložit, ukončit, nahradit. Vstup: <span class="kbd">:</span></span></div>
+      <div class="mode"><b>Vizuální</b><span>označení textu. Vstup: <span class="kbd">v</span> <span class="kbd">V</span></span></div>
+    </div>
+    <div class="flow"><span>vim soubor</span><i>→</i><span>i</span><i>→</i><span>píšu text</span><i>→</i><span>Esc</span><i>→</i><span>:wq</span><i>→</i><span>Enter</span></div>
+    <div class="callout"><b>Jak ukončit vim bez uložení:</b> <span class="kbd">Esc</span> a pak <code>:q!</code> <span class="kbd">Enter</span>. Pro první seznámení spusťte interaktivní kurz <code>vimtutor</code>.</div>
+  </article>
+
+  <article class="card c7"><h2>vim — nejdůležitější příkazy</h2>
+    <div class="tbl"><table>
+      <tr><th>Normální režim</th><th>Akce</th><th>Příkazový režim</th><th>Akce</th></tr>
+      <tr><td><code>h j k l</code></td><td>pohyb ← ↓ ↑ →</td><td><code>:w</code></td><td>uložit</td></tr>
+      <tr><td><code>gg</code> / <code>G</code></td><td>začátek / konec souboru</td><td><code>:q</code></td><td>ukončit</td></tr>
+      <tr><td><code>0</code> / <code>$</code></td><td>začátek / konec řádku</td><td><code>:wq</code> nebo <code>ZZ</code></td><td>uložit a ukončit</td></tr>
+      <tr><td><code>x</code></td><td>smazat znak</td><td><code>:q!</code></td><td>ukončit bez uložení</td></tr>
+      <tr><td><code>dd</code> / <code>3dd</code></td><td>smazat (vyjmout) řádek / 3 řádky</td><td><code>:42</code></td><td>skok na řádek 42</td></tr>
+      <tr><td><code>yy</code> / <code>p</code></td><td>kopírovat řádek / vložit</td><td><code>:set number</code></td><td>čísla řádků</td></tr>
+      <tr><td><code>u</code> / <code>Ctrl+R</code></td><td>zpět / znovu</td><td><code>:%s/old/new/g</code></td><td>nahradit vše v souboru</td></tr>
+      <tr><td><code>/text</code>, <code>n</code></td><td>hledat, další výskyt</td><td><code>:syntax on</code></td><td>zvýraznění syntaxe</td></tr>
+    </table></div>
+  </article>
+  <article class="card c5"><h2>Porovnání</h2>
+    <div class="tbl"><table>
+      <tr><th></th><th>nano</th><th>vim</th></tr>
+      <tr><td>Učení</td><td>okamžitě</td><td>delší, odmění se</td></tr>
+      <tr><td>Ovládání</td><td>klávesové zkratky s Ctrl</td><td>režimy a příkazy</td></tr>
+      <tr><td>Dostupnost</td><td>Debian, Ubuntu v základu</td><td>skoro všude (aspoň <code>vi</code>)</td></tr>
+      <tr><td>Síla</td><td>drobné úpravy</td><td>makra, regex, pluginy</td></tr>
+      <tr><td>Kdy</td><td>rychlá úprava konfigurace</td><td>každodenní práce, programování</td></tr>
+    </table></div>
+<pre># výchozí editor systému (např. pro visudo, crontab)
+$ sudo update-alternatives --config editor
+$ export EDITOR=nano     <span class="cm"># jen pro tento shell</span></pre>
+  </article>
+</div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="k6" class="view wrap chapter" data-title="Přesměrování a roury">
+<header class="ch-head">
+  <div class="kicker">Kapitola 6 / 12 · bash</div>
+  <h1>Přesměrování a roury</h1>
+  <p class="lead">Unixová filozofie: každý program dělá jednu věc dobře a umí spolupracovat s ostatními. Spojením malých nástrojů rourou vzniká nástroj nový.</p>
+</header>
+<div class="grid">
+  <article class="card c5"><h2>Tři standardní proudy</h2>
+    <div class="tbl"><table>
+      <tr><th>Číslo</th><th>Název</th><th>Výchozí</th></tr>
+      <tr><td class="perms">0</td><td><b>stdin</b> — vstup</td><td>klávesnice</td></tr>
+      <tr><td class="perms">1</td><td><b>stdout</b> — výstup</td><td>terminál</td></tr>
+      <tr><td class="perms">2</td><td><b>stderr</b> — chyby</td><td>terminál</td></tr>
+    </table></div>
+    <div class="flow"><span>stdin 0</span><i>→</i><span>příkaz</span><i>→</i><span>stdout 1</span></div>
+    <div class="flow"><span style="visibility:hidden">stdin 0</span><i style="visibility:hidden">→</i><span style="visibility:hidden">příkaz</span><i>↘</i><span>stderr 2</span></div>
+    <p class="muted">Výstup a chyby jdou na obrazovku zvlášť, a proto je lze přesměrovat každý jinam.</p>
+  </article>
+  <article class="card c7"><h2>Přesměrování</h2>
+    <div class="tbl"><table>
+      <tr><th>Zápis</th><th>Význam</th></tr>
+      <tr><td><code>prikaz &gt; soubor</code></td><td>stdout do souboru (přepíše)</td></tr>
+      <tr><td><code>prikaz &gt;&gt; soubor</code></td><td>stdout na konec souboru (připojí)</td></tr>
+      <tr><td><code>prikaz &lt; soubor</code></td><td>stdin ze souboru</td></tr>
+      <tr><td><code>prikaz 2&gt; chyby.log</code></td><td>jen chyby do souboru</td></tr>
+      <tr><td><code>prikaz &gt; vse.log 2&gt;&amp;1</code></td><td>výstup i chyby do jednoho souboru</td></tr>
+      <tr><td><code>prikaz &amp;&gt; vse.log</code></td><td>totéž, kratší zápis v bashi</td></tr>
+      <tr><td><code>prikaz 2&gt; /dev/null</code></td><td>chyby zahodit</td></tr>
+    </table></div>
+<pre>$ ls /etc &gt; seznam.txt
+$ date &gt;&gt; zaznam.log
+$ find / -name "*.conf" 2&gt;/dev/null     <span class="cm"># bez hlášek „Permission denied“</span>
+$ sort &lt; jmena.txt</pre>
+  </article>
+
+  <article class="card c7"><h2>Roura <code>|</code></h2>
+    <div class="syntax"><b>prikaz1</b> <em>|</em> <b>prikaz2</b> <em>|</em> <b>prikaz3</b></div>
+    <p>stdout levého příkazu se stane stdin pravého. Data tečou zleva doprava a nic se neukládá na disk.</p>
+<pre>$ ls -l /etc | less                    <span class="cm"># listování dlouhým výpisem</span>
+$ cat /etc/passwd | wc -l              <span class="cm"># kolik je účtů</span>
+$ ps aux | grep sshd                   <span class="cm"># najít proces</span>
+$ cut -d: -f1 /etc/passwd | sort       <span class="cm"># seřazená jména účtů</span>
+$ du -ah ~ | sort -rh | head -5        <span class="cm"># 5 největších položek</span>
+$ history | awk '{print $2}' | sort | uniq -c | sort -rn | head
+                                       <span class="cm"># moje nejčastější příkazy</span></pre>
+  </article>
+  <article class="card c5"><h2>Filtry do rour</h2>
+    <div class="tbl"><table>
+      <tr><td><code>sort</code></td><td>řadí (<code>-n</code> čísla, <code>-r</code> obráceně, <code>-h</code> 2K, 5M)</td></tr>
+      <tr><td><code>uniq</code></td><td>slučuje opakované sousední řádky (<code>-c</code> počty)</td></tr>
+      <tr><td><code>wc</code></td><td>počítá řádky <code>-l</code>, slova <code>-w</code>, znaky <code>-c</code></td></tr>
+      <tr><td><code>cut</code></td><td>vybere sloupec: <code>-d:</code> oddělovač, <code>-f1</code> pole</td></tr>
+      <tr><td><code>tr</code></td><td>nahradí znaky: <code>tr a-z A-Z</code></td></tr>
+      <tr><td><code>head</code>, <code>tail</code></td><td>začátek, konec</td></tr>
+      <tr><td><code>grep</code></td><td>řádky odpovídající vzoru (kapitola 7)</td></tr>
+      <tr><td><code>awk</code></td><td>práce se sloupci: <code>awk '{print $1}'</code></td></tr>
+      <tr><td><code>tee</code></td><td>zapíše do souboru a zároveň pošle dál</td></tr>
+      <tr><td><code>xargs</code></td><td>udělá z řádků argumenty dalšího příkazu</td></tr>
+    </table></div>
+  </article>
+
+  <article class="card c6"><h2>tee, xargs a here-doc</h2>
+<pre>$ ls -l | tee vypis.txt | wc -l        <span class="cm"># uloží i spočítá</span>
+$ echo "nameserver 1.1.1.1" | sudo tee -a /etc/resolv.conf
+                                       <span class="cm"># sudo echo &gt; soubor nefunguje, tee ano</span>
+$ find . -name "*.log" | xargs gzip    <span class="cm"># zabalí všechny logy</span>
+
+$ cat &gt; pozdrav.txt &lt;&lt;EOF
+Ahoj $USER,
+dnes je $(date +%A).
+EOF</pre>
+  </article>
+  <article class="card c6"><h2>Řetězení příkazů</h2>
+    <div class="tbl"><table>
+      <tr><td><code>a ; b</code></td><td>spustí <code>b</code> vždy, po skončení <code>a</code></td></tr>
+      <tr><td><code>a &amp;&amp; b</code></td><td>spustí <code>b</code>, jen když <code>a</code> uspěl (návratový kód 0)</td></tr>
+      <tr><td><code>a || b</code></td><td>spustí <code>b</code>, jen když <code>a</code> selhal</td></tr>
+    </table></div>
+<pre>$ sudo apt update &amp;&amp; sudo apt upgrade -y
+$ mkdir zaloha || echo "Adresář už existuje"
+$ ping -c1 8.8.8.8 &gt;/dev/null &amp;&amp; echo "online" || echo "offline"
+$ echo $?                              <span class="cm"># návratový kód posledního příkazu</span></pre>
+  </article>
+</div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="k7" class="view wrap chapter" data-title="Regulární výrazy">
+<header class="ch-head">
+  <div class="kicker">Kapitola 7 / 12 · bash</div>
+  <h1>Regulární výrazy</h1>
+  <p class="lead">Regulární výraz popisuje vzor textu: „řádek začínající číslem“, „cokoliv, co vypadá jako e-mail“. S rourami z minulé kapitoly z nich vzniká rychlý nástroj na vytahování dat.</p>
+</header>
+<div class="grid">
+  <article class="card c6"><h2>Základní metaznaky</h2>
+    <div class="tbl"><table>
+      <tr><th>Znak</th><th>Význam</th><th>Příklad → shoda</th></tr>
+      <tr><td><code>.</code></td><td>jeden libovolný znak</td><td><code>k.t</code> → kat, kot, k9t</td></tr>
+      <tr><td><code>^</code> / <code>$</code></td><td>začátek / konec řádku</td><td><code>^#</code> → komentář</td></tr>
+      <tr><td><code>*</code></td><td>0× a víc předchozí</td><td><code>ab*c</code> → ac, abbc</td></tr>
+      <tr><td><code>+</code></td><td>1× a víc</td><td><code>[0-9]+</code> → 7, 2026</td></tr>
+      <tr><td><code>?</code></td><td>0× nebo 1×</td><td><code>https?</code> → http, https</td></tr>
+      <tr><td><code>{n,m}</code></td><td>n až m opakování</td><td><code>[0-9]{3}</code> → 420</td></tr>
+      <tr><td><code>[abc]</code></td><td>jeden ze znaků</td><td><code>[Ll]inux</code></td></tr>
+      <tr><td><code>[^0-9]</code></td><td>jakýkoli znak kromě</td><td>ne-číslice</td></tr>
+      <tr><td><code>( | )</code></td><td>skupina, alternativa</td><td><code>(jpg|png)$</code></td></tr>
+      <tr><td><code>\.</code></td><td>doslovná tečka</td><td><code>\.conf$</code></td></tr>
+    </table></div>
+    <p class="muted"><code>+ ? { } ( ) |</code> fungují bez lomítek jen v rozšířené syntaxi: <code>grep -E</code>, <code>sed -E</code>.</p>
+  </article>
+  <article class="card c6"><h2>grep — hledání řádků</h2>
+    <div class="syntax"><b>grep</b> <i>[-E -i -v -o -n -c -r]</i> <em>'vzor'</em> <em>[soubory]</em></div>
+<pre>$ grep root /etc/passwd                <span class="cm"># řádky obsahující root</span>
+$ grep -i error app.log                <span class="cm"># bez ohledu na velikost písmen</span>
+$ grep -v '^#' /etc/ssh/sshd_config    <span class="cm"># bez komentářů</span>
+$ grep -vE '^(#|$)' sshd_config        <span class="cm"># bez komentářů a prázdných řádků</span>
+$ grep -n 'Port' sshd_config           <span class="cm"># s čísly řádků</span>
+$ grep -c 'bash$' /etc/passwd          <span class="cm"># kolik účtů má bash</span>
+$ grep -r 'listen' /etc/nginx/         <span class="cm"># rekurzivně v adresáři</span>
+$ grep -oE '[0-9]+' text.txt           <span class="cm"># vypsat jen shody (-o)</span></pre>
+    <h3>Třídy znaků POSIX</h3>
+    <p><code>[[:digit:]]</code> číslice · <code>[[:alpha:]]</code> písmena · <code>[[:space:]]</code> mezery · <code>[[:upper:]]</code> velká písmena</p>
+  </article>
+
+  <article class="card c6"><h2>sed — nahrazování</h2>
+    <div class="syntax"><b>sed</b> <i>-E</i> <em>'s/vzor/náhrada/g'</em> <b>soubor</b></div>
+<pre>$ sed 's/http:/https:/g' odkazy.txt            <span class="cm"># výpis s náhradou</span>
+$ sed -i 's/^#Port 22/Port 2222/' sshd_config  <span class="cm"># -i = přímo v souboru</span>
+$ sed -i.bak 's/old/new/g' konfig.txt          <span class="cm"># se zálohou .bak</span>
+$ sed -n '10,20p' soubor.txt                   <span class="cm"># jen řádky 10–20</span>
+$ sed '/^$/d' soubor.txt                       <span class="cm"># smazat prázdné řádky</span>
+
+<span class="cm"># skupiny ( ) a odkazy \1 \2: přehodit datum 2026-10-01 → 01.10.2026</span>
+$ echo "2026-10-01" | sed -E 's/([0-9]{4})-([0-9]{2})-([0-9]{2})/\3.\2.\1/'
+<span class="out">01.10.2026</span></pre>
+  </article>
+  <article class="card c6"><h2>Užitečné vzory</h2>
+    <div class="tbl"><table>
+      <tr><th>Co</th><th>Vzor (grep -E)</th></tr>
+      <tr><td>IPv4 adresa</td><td><code>([0-9]{1,3}\.){3}[0-9]{1,3}</code></td></tr>
+      <tr><td>e-mail</td><td><code>[[:alnum:]._%+-]+@[[:alnum:].-]+\.[a-z]{2,}</code></td></tr>
+      <tr><td>české PSČ</td><td><code>[0-9]{3} ?[0-9]{2}</code></td></tr>
+      <tr><td>telefon +420</td><td><code>(\+420 ?)?[0-9]{3} ?[0-9]{3} ?[0-9]{3}</code></td></tr>
+      <tr><td>datum dd.mm.rrrr</td><td><code>[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{4}</code></td></tr>
+      <tr><td>URL</td><td><code>https?://[^" &lt;&gt;]+</code></td></tr>
+    </table></div>
+    <p class="muted">Vzory jsou záměrně jednoduché. Například IPv4 vzor projde i <code>999.1.1.1</code>; pro výuku a rychlé hledání to stačí.</p>
+  </article>
+
+  <article class="card c7"><h2>Data z načtené webové stránky</h2>
+    <p><code>curl</code> stáhne stránku na stdout, regulární výrazy z ní vyberou to, co potřebujeme.</p>
+<pre><span class="cm"># kurz EUR z denního kurzovního lístku ČNB (formát země|měna|množství|kód|kurz)</span>
+$ curl -s https://www.cnb.cz/cs/financni-trhy/devizovy-trh/kurzy-devizoveho-trhu/kurzy-devizoveho-trhu/denni_kurz.txt \
+    | grep '|EUR|' | cut -d'|' -f5
+
+<span class="cm"># titulek stránky</span>
+$ curl -s https://www.debian.org | grep -oE '&lt;title&gt;[^&lt;]*' | sed 's/&lt;title&gt;//'
+
+<span class="cm"># všechny odkazy na stránce, bez duplicit</span>
+$ curl -s https://www.debian.org \
+    | grep -oE 'href="https?://[^"]+"' \
+    | sed -E 's/href="(.*)"/\1/' | sort -u
+
+<span class="cm"># všechny e-mailové adresy na stránce</span>
+$ curl -s https://example.org/kontakty \
+    | grep -oE '[[:alnum:]._%+-]+@[[:alnum:].-]+\.[a-z]{2,}' | sort -u</pre>
+    <div class="callout">Regex na HTML stačí na jednoduché úlohy. Na složitější stránky je spolehlivější parser (např. Python s BeautifulSoup) nebo API, pokud ho web nabízí.</div>
+  </article>
+  <article class="card c5"><h2>Analýza logu</h2>
+<pre><span class="cm"># kdo se neúspěšně zkoušel přihlásit přes SSH, seřazeno podle počtu</span>
+$ sudo journalctl -u ssh \
+    | grep 'Failed password' \
+    | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' \
+    | sort | uniq -c | sort -rn | head
+
+<span class="out">     42 203.0.113.17
+      9 198.51.100.4
+      3 192.0.2.88</span>
+
+<span class="cm"># nejčastější HTTP stavové kódy webového serveru</span>
+$ sudo awk '{print $9}' /var/log/nginx/access.log \
+    | grep -E '^[0-9]{3}$' | sort | uniq -c | sort -rn</pre>
+    <p class="muted">Debian 12 a 13 ve výchozím stavu ukládá systémové logy do journalu, proto <code>journalctl</code> místo <code>/var/log/auth.log</code>.</p>
+  </article>
+</div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section id="k8" class="view wrap chapter" data-title="Procesy a služby">
+<header class="ch-head">
+  <div class="kicker">Kapitola 8 / 12 · Správa systému</div>
+  <h1>Procesy a služby</h1>
+  <p class="lead">Každý spuštěný program je proces s vlastním číslem PID. Umíme je vypsat, sledovat, poslat na pozadí a ukončit, a dlouhodobě běžící služby spravujeme přes systemd.</p>
+</header>
+<div class="grid">
+  <article class="card c7"><h2>Výpis procesů</h2>
+<pre>$ ps                      <span class="cm"># procesy v tomto terminálu</span>
+$ ps aux                  <span class="cm"># všechny procesy všech uživatelů</span>
+$ ps aux --sort=-%mem | head    <span class="cm"># největší spotřeba paměti</span>
+$ ps -ef --forest         <span class="cm"># i s rodiči (PPID)</span>
+$ pstree -p               <span class="cm"># strom procesů</span>
+$ pgrep -a nginx          <span class="cm"># PID podle jména</span>
+$ pidof sshd
+
+$ ps aux | head -3
+<span class="out">USER   PID %CPU %MEM    VSZ   RSS TTY  STAT START  TIME COMMAND
+root     1  0.0  0.3 168M  12M ?    Ss   08:01  0:02 /sbin/init
+alice 2412  1.2  2.1 812M  84M pts/0 Sl  08:15  0:30 python3 app.py</span></pre>
+  </article>
+  <article class="card c5"><h2>Stavy procesu (STAT)</h2>
+    <div class="tbl"><table>
+      <tr><td class="perms">R</td><td>běží nebo čeká na CPU</td></tr>
+      <tr><td class="perms">S</td><td>spí, čeká na událost (nejčastější)</td></tr>
+      <tr><td class="perms">D</td><td>nepřerušitelné čekání, typicky na disk</td></tr>
+      <tr><td class="perms">T</td><td>zastavený (<span class="kbd">Ctrl+Z</span>)</td></tr>
+      <tr><td class="perms">Z</td><td>zombie: skončil, rodič si nevyzvedl výsledek</td></tr>
+    </table></div>
+    <h3>Sledování v reálném čase</h3>
+    <p><code>top</code> je vždy k dispozici, <code>htop</code> (<code>apt install htop</code>) je přehlednější a ovládá se šipkami. V <code>top</code>: <span class="kbd">M</span> řadit podle paměti, <span class="kbd">P</span> podle CPU, <span class="kbd">k</span> ukončit proces, <span class="kbd">q</span> konec.</p>
+  </article>
+
+  <article class="card c6"><h2>Popředí a pozadí</h2>
+    <div class="syntax"><b>příkaz</b> <em>&amp;</em> &nbsp;<span class="muted">→ spustí na pozadí</span></div>
+<pre>$ sleep 300 &amp;                 <span class="cm"># hned vrátí prompt</span>
+<span class="out">[1] 3051</span>
+$ jobs                        <span class="cm"># úlohy tohoto shellu</span>
+<span class="out">[1]+  Running    sleep 300 &amp;</span>
+$ fg %1                       <span class="cm"># zpět do popředí</span>
+<span class="cm">  … Ctrl+Z …                    pozastavit</span>
+$ bg %1                       <span class="cm"># pokračovat na pozadí</span>
+
+$ nohup ./zaloha.sh &gt; zaloha.log 2&gt;&amp;1 &amp;
+                              <span class="cm"># přežije i odhlášení</span>
+$ disown %1                   <span class="cm"># odpojit úlohu od shellu</span></pre>
+  </article>
+  <article class="card c6"><h2>Signály a ukončení procesu</h2>
+    <div class="tbl"><table>
+      <tr><th>Signál</th><th>Číslo</th><th>Význam</th></tr>
+      <tr><td><code>SIGTERM</code></td><td>15</td><td>slušná žádost o ukončení (výchozí)</td></tr>
+      <tr><td><code>SIGKILL</code></td><td>9</td><td>okamžité ukončení, nelze zachytit</td></tr>
+      <tr><td><code>SIGINT</code></td><td>2</td><td>přerušení (<span class="kbd">Ctrl+C</span>)</td></tr>
+      <tr><td><code>SIGHUP</code></td><td>1</td><td>znovu načíst konfiguraci (u démonů)</td></tr>
+      <tr><td><code>SIGSTOP</code> / <code>SIGCONT</code></td><td>19 / 18</td><td>pozastavit / pokračovat</td></tr>
+    </table></div>
+<pre>$ kill 3051              <span class="cm"># SIGTERM</span>
+$ kill -9 3051           <span class="cm"># SIGKILL, až když TERM nepomůže</span>
+$ pkill -f "python3 app.py"   <span class="cm"># podle jména/příkazu</span>
+$ killall firefox        <span class="cm"># všechny procesy daného jména</span>
+$ kill -l                <span class="cm"># seznam signálů</span></pre>
+  </article>
+
+  <article class="card c5"><h2>Priorita</h2>
+    <p>Hodnota <b>nice</b> je od −20 (nejvyšší priorita) do 19 (nejnižší). Zvýšit prioritu může jen root.</p>
+<pre>$ nice -n 10 tar czf zaloha.tgz /data
+$ renice -n 5 -p 3051
+$ sudo renice -n -5 -p 3051</pre>
+    <h3>Pod kapotou</h3>
+    <p>Informace o každém procesu jsou v adresáři <code>/proc/PID/</code>, např. <code>cat /proc/3051/status</code>.</p>
+  </article>
+  <article class="card c7"><h2>Služby (systemd)</h2>
+    <div class="syntax"><b>systemctl</b> <i>status|start|stop|restart|reload|enable|disable</i> <em>služba</em></div>
+<pre>$ systemctl status ssh                <span class="cm"># běží? od kdy? poslední logy</span>
+$ sudo systemctl restart nginx
+$ sudo systemctl enable --now nginx   <span class="cm"># spouštět po startu + hned spustit</span>
+$ sudo systemctl disable bluetooth
+$ systemctl list-units --type=service --state=running
+$ systemctl --failed                  <span class="cm"># co selhalo</span>
+
+$ journalctl -u nginx -f              <span class="cm"># logy služby živě</span>
+$ journalctl -b -p err                <span class="cm"># chyby od posledního startu</span></pre>
+  </article>
+</div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="k9" class="view wrap chapter" data-title="Příkazy správce">
+<header class="ch-head">
+  <div class="kicker">Kapitola 9 / 12 · Správa systému</div>
+  <h1>Příkazy správce: sudo a su</h1>
+  <p class="lead">Na správu systému potřebujeme práva roota. Pracovat jako root celý den je ale nebezpečné, proto si práva půjčujeme jen na konkrétní příkaz.</p>
+</header>
+<div class="grid">
+  <article class="card c6"><h2>sudo — jeden příkaz jako root</h2>
+    <div class="syntax"><b>sudo</b> <i>[-u uživatel]</i> <em>příkaz</em></div>
+<pre>$ sudo apt update                   <span class="cm"># zadává se VLASTNÍ heslo</span>
+$ sudo -u www-data ls /var/www      <span class="cm"># jako jiný uživatel</span>
+$ sudo -l                           <span class="cm"># co smím přes sudo spouštět</span>
+$ sudo -i                           <span class="cm"># přihlašovací shell roota</span>
+$ sudo !!                           <span class="cm"># zopakovat poslední příkaz se sudo</span>
+$ sudoedit /etc/hosts               <span class="cm"># bezpečná úprava souboru</span>
+$ sudo -k                           <span class="cm"># zapomenout heslo hned</span></pre>
+    <p class="muted">Po zadání si sudo heslo pamatuje 15 minut. Každé použití se zapisuje do logu.</p>
+  </article>
+  <article class="card c6"><h2>su — přepnutí uživatele</h2>
+    <div class="syntax"><b>su</b> <i>[-]</i> <em>[uživatel]</em></div>
+<pre>$ su -                    <span class="cm"># stát se rootem, zadává se heslo ROOTA</span>
+$ su - alice              <span class="cm"># stát se uživatelem alice</span>
+$ su alice                <span class="cm"># bez „-“: zůstane prostředí a adresář</span>
+$ su -c 'apt update' -    <span class="cm"># jeden příkaz jako root</span>
+$ exit                    <span class="cm"># návrat</span>
+
+$ whoami
+$ id</pre>
+    <div class="callout"><code>su -</code> (s pomlčkou) načte prostředí cílového uživatele včetně <code>PATH</code>. Bez pomlčky mohou chybět příkazy z <code>/usr/sbin</code>.</div>
+  </article>
+
+  <article class="card c12"><h2>sudo × su</h2>
+    <div class="tbl"><table>
+      <tr><th></th><th>sudo</th><th>su</th></tr>
+      <tr><td>Čí heslo</td><td>vlastní heslo uživatele</td><td>heslo cílového účtu (roota)</td></tr>
+      <tr><td>Rozsah</td><td>jeden příkaz, lze omezit na konkrétní příkazy</td><td>celý shell, plná práva</td></tr>
+      <tr><td>Záznam</td><td>každý příkaz v logu s jménem uživatele</td><td>jen že se někdo přepnul</td></tr>
+      <tr><td>Sdílení hesla roota</td><td>není potřeba, root může být zamčený</td><td>každý správce zná heslo roota</td></tr>
+      <tr><td>Kdy</td><td>běžná správa (doporučeno)</td><td>záchrana, systémy bez sudo, delší práce jako jiný uživatel</td></tr>
+    </table></div>
+  </article>
+
+  <article class="card c6"><h2>Kdo smí sudo</h2>
+    <p>V Debianu dostanou plná práva členové skupiny <code>sudo</code> (v rodině Red Hat je to skupina <code>wheel</code>).</p>
+<pre>$ su -                           <span class="cm"># pokud sudo zatím nemáme</span>
+# apt install sudo               <span class="cm"># když bylo při instalaci zadáno heslo roota</span>
+# usermod -aG sudo alice
+# exit
+<span class="cm"># alice se musí odhlásit a znovu přihlásit</span>
+
+$ groups alice
+<span class="out">alice : alice sudo</span>
+
+<span class="cm"># kdo sudo použil</span>
+$ sudo journalctl _COMM=sudo --since today</pre>
+  </article>
+  <article class="card c6"><h2>Soubor sudoers</h2>
+    <p>Pravidla jsou v <code>/etc/sudoers</code> a v souborech v <code>/etc/sudoers.d/</code>. Upravují se <b>jen</b> přes <code>visudo</code>, které před uložením zkontroluje syntaxi.</p>
+<pre>$ sudo visudo
+$ sudo visudo -f /etc/sudoers.d/web
+
+<span class="cm"># kdo   odkud=(jako koho)  co</span>
+root    ALL=(ALL:ALL) ALL
+%sudo   ALL=(ALL:ALL) ALL            <span class="cm"># % = skupina</span>
+
+<span class="cm"># bob smí jen restartovat web</span>
+bob     ALL=(root) /usr/bin/systemctl restart nginx</pre>
+    <div class="callout warn"><b>Chyba v sudoers</b> může zablokovat sudo všem. Proto vždy <code>visudo</code>, nikdy přímo editor. Volbu <code>NOPASSWD</code> používejte jen u úzce omezených příkazů.</div>
+  </article>
+</div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="k10" class="view wrap chapter" data-title="Správa uživatelů a skupin">
+<header class="ch-head">
+  <div class="kicker">Kapitola 10 / 12 · Správa systému</div>
+  <h1>Správa uživatelů a skupin</h1>
+  <p class="lead">Účty a skupiny jsou obyčejné řádky v textových souborech. Nástroje níže je upravují bezpečně a hlídají, aby soubory zůstaly konzistentní.</p>
+</header>
+<div class="grid">
+  <article class="card c7"><h2>Kde jsou uživatelé uloženi</h2>
+<pre>$ grep alice /etc/passwd
+<span class="out">alice:x:1001:1001:Alice Nováková,,,:/home/alice:/bin/bash</span>
+  │    │  │    │        │               │           └ shell
+  │    │  │    │        │               └ domovský adresář
+  │    │  │    │        └ celé jméno (GECOS)
+  │    │  │    └ GID primární skupiny
+  │    │  └ UID
+  │    └ heslo je jinde (x → /etc/shadow)
+  └ login</pre>
+    <div class="tbl"><table>
+      <tr><td><code>/etc/passwd</code></td><td>účty, čitelné pro všechny</td></tr>
+      <tr><td><code>/etc/shadow</code></td><td>hashe hesel a jejich platnost, jen pro root</td></tr>
+      <tr><td><code>/etc/group</code></td><td>skupiny a jejich členové</td></tr>
+      <tr><td><code>/etc/skel/</code></td><td>šablona obsahu nového domovského adresáře</td></tr>
+    </table></div>
+    <p class="muted">UID 0 = root, 1–999 = systémové účty služeb, od 1000 = běžní uživatelé.</p>
+  </article>
+  <article class="card c5"><h2>Kdo jsem a kdo je přihlášen</h2>
+<pre>$ whoami
+$ id alice
+<span class="out">uid=1001(alice) gid=1001(alice) skupiny=1001(alice),27(sudo)</span>
+$ groups
+$ who            <span class="cm"># přihlášení uživatelé</span>
+$ w              <span class="cm"># … a co dělají</span>
+$ last -n 5      <span class="cm"># poslední přihlášení</span>
+$ getent passwd alice</pre>
+  </article>
+
+  <article class="card c6"><h2>Vytvoření uživatele</h2>
+    <h3>adduser — interaktivní, doporučeno v Debianu</h3>
+<pre>$ sudo adduser jan
+<span class="out">Adding user `jan' ...
+Creating home directory `/home/jan' ...
+New password:</span> ********
+<span class="out">Full Name []:</span> Jan Novák</pre>
+    <h3>useradd — nízkoúrovňový, pro skripty</h3>
+<pre>$ sudo useradd -m -s /bin/bash -c "Jan Novák" -G users jan
+$ sudo passwd jan
+<span class="cm"># -m domovský adresář, -s shell, -c komentář, -G další skupiny</span></pre>
+    <div class="callout">Bez <code>-m</code> a <code>-s</code> vytvoří <code>useradd</code> účet bez domovského adresáře a se shellem <code>/bin/sh</code>.</div>
+  </article>
+  <article class="card c6"><h2>Úprava účtu — usermod</h2>
+    <div class="syntax"><b>usermod</b> <i>[volby]</i> <em>uživatel</em></div>
+<pre>$ sudo usermod -aG docker jan         <span class="cm"># přidat do skupiny (-a = append!)</span>
+$ sudo usermod -s /bin/zsh jan        <span class="cm"># změnit shell</span>
+$ sudo usermod -c "Jan Novák, 3.B" jan
+$ sudo usermod -l jnovak jan          <span class="cm"># přejmenovat login</span>
+$ sudo usermod -d /home/jnovak -m jnovak   <span class="cm"># přesunout domov</span>
+$ sudo usermod -e 2027-06-30 jnovak   <span class="cm"># účet vyprší</span>
+$ sudo usermod -L jnovak              <span class="cm"># zamknout</span>
+$ sudo usermod -U jnovak              <span class="cm"># odemknout</span></pre>
+    <div class="callout warn"><code>usermod -G skupina</code> bez <code>-a</code> uživatele <b>odebere ze všech ostatních</b> doplňkových skupin, třeba i ze <code>sudo</code>.</div>
+  </article>
+
+  <article class="card c6"><h2>Hesla a jejich platnost</h2>
+<pre>$ passwd                     <span class="cm"># změnit vlastní heslo</span>
+$ sudo passwd jan            <span class="cm"># nastavit heslo jinému</span>
+$ sudo passwd -e jan         <span class="cm"># vynutit změnu při příštím přihlášení</span>
+$ sudo passwd -l jan         <span class="cm"># zamknout heslo</span>
+$ sudo passwd -S jan         <span class="cm"># stav hesla</span>
+
+$ sudo chage -l jan          <span class="cm"># přehled platnosti</span>
+$ sudo chage -M 90 -W 7 jan  <span class="cm"># max. 90 dní, varovat 7 dní předem</span></pre>
+  </article>
+  <article class="card c6"><h2>Skupiny a smazání účtu</h2>
+<pre>$ sudo addgroup ucitele               <span class="cm"># nebo groupadd</span>
+$ sudo adduser jan ucitele            <span class="cm"># přidat člena (Debian)</span>
+$ sudo gpasswd -a jan ucitele         <span class="cm"># přidat člena</span>
+$ sudo gpasswd -d jan ucitele         <span class="cm"># odebrat člena</span>
+$ sudo groupmod -n vyuka ucitele      <span class="cm"># přejmenovat skupinu</span>
+$ sudo delgroup vyuka                 <span class="cm"># smazat skupinu</span>
+$ getent group sudo                   <span class="cm"># členové skupiny</span>
+
+$ sudo deluser jan                    <span class="cm"># smazat účet, data zůstanou</span>
+$ sudo deluser --remove-home jan      <span class="cm"># i s domovským adresářem</span>
+$ sudo userdel -r jan                 <span class="cm"># totéž nízkoúrovňově</span></pre>
+    <p class="muted">Změna členství ve skupinách se projeví po novém přihlášení (nebo <code>newgrp skupina</code>).</p>
+  </article>
+</div>
+</section>
+
+<!-- ============ 11 ============ -->
+<section id="k11" class="view wrap chapter" data-title="Přidělování a odebírání oprávnění">
+<header class="ch-head">
+  <div class="kicker">Kapitola 11 / 12 · Správa systému</div>
+  <h1>Přidělování a odebírání oprávnění</h1>
+  <p class="lead">Navazujeme na kapitolu 1: každý soubor má vlastníka, skupinu a tři trojice práv. Teď je budeme měnit, a to i jemněji, než dovoluje klasické rwx.</p>
+</header>
+<div class="grid">
+  <article class="card c5"><h2>Co znamená r, w, x</h2>
+    <div class="tbl"><table>
+      <tr><th></th><th>u souboru</th><th>u adresáře</th></tr>
+      <tr><td class="perms">r</td><td>číst obsah</td><td>vypsat seznam souborů</td></tr>
+      <tr><td class="perms">w</td><td>měnit obsah</td><td>vytvářet, mazat, přejmenovat soubory uvnitř</td></tr>
+      <tr><td class="perms">x</td><td>spustit</td><td>vstoupit (<code>cd</code>) a přistupovat k souborům</td></tr>
+    </table></div>
+    <p class="muted">Smazání souboru tedy řídí právo <b>w na adresáři</b>, ne na souboru samotném.</p>
+  </article>
+  <article class="card c7"><h2>chmod — symbolický zápis</h2>
+    <div class="syntax"><b>chmod</b> <i>[ugoa][+-=][rwx]</i> <em>soubor</em></div>
+    <p><code>u</code> vlastník · <code>g</code> skupina · <code>o</code> ostatní · <code>a</code> všichni &nbsp;|&nbsp; <code>+</code> přidat · <code>-</code> odebrat · <code>=</code> nastavit přesně</p>
+<pre>$ chmod u+x skript.sh             <span class="cm"># vlastník smí spouštět</span>
+$ chmod g+w sdilene.txt           <span class="cm"># skupina smí zapisovat</span>
+$ chmod o-rwx tajne.txt           <span class="cm"># ostatním odebrat vše</span>
+$ chmod go-w report.pdf           <span class="cm"># skupině i ostatním odebrat zápis</span>
+$ chmod a+r verejne.html          <span class="cm"># všichni smí číst</span>
+$ chmod u=rw,g=r,o= data.csv      <span class="cm"># přesně rw-r-----</span>
+$ chmod -R g+rX projekt/          <span class="cm"># rekurzivně; X = x jen adresářům</span></pre>
+  </article>
+
+  <article class="card c7"><h2>chmod — číselný (oktalový) zápis</h2>
+    <p>Sečteme hodnoty <b>r = 4, w = 2, x = 1</b> pro každou trojici zvlášť.</p>
+    <div class="tbl"><table>
+      <tr><th>Číslo</th><th>Práva</th><th>Typické použití</th></tr>
+      <tr><td class="perms">755</td><td><code>rwxr-xr-x</code></td><td>skripty, programy, adresáře</td></tr>
+      <tr><td class="perms">644</td><td><code>rw-r--r--</code></td><td>běžné soubory, webové stránky</td></tr>
+      <tr><td class="perms">700</td><td><code>rwx------</code></td><td>soukromý adresář, <code>~/.ssh</code></td></tr>
+      <tr><td class="perms">600</td><td><code>rw-------</code></td><td>soukromý klíč, soubor s heslem</td></tr>
+      <tr><td class="perms">750</td><td><code>rwxr-x---</code></td><td>adresář týmu, ostatní nemají přístup</td></tr>
+      <tr><td class="perms">660</td><td><code>rw-rw----</code></td><td>sdílený soubor ve skupině</td></tr>
+    </table></div>
+<pre>$ chmod 600 ~/.ssh/id_ed25519
+$ chmod 755 zaloha.sh
+$ stat -c '%a %A %n' zaloha.sh
+<span class="out">755 -rwxr-xr-x zaloha.sh</span></pre>
+  </article>
+  <article class="card c5"><h2>chown a chgrp — vlastnictví</h2>
+    <div class="syntax"><b>chown</b> <i>[uživatel][:skupina]</i> <em>soubor</em></div>
+<pre>$ sudo chown jan soubor.txt            <span class="cm"># nový vlastník</span>
+$ sudo chown jan:ucitele soubor.txt    <span class="cm"># vlastník i skupina</span>
+$ sudo chown :ucitele soubor.txt       <span class="cm"># jen skupina</span>
+$ sudo chgrp ucitele soubor.txt        <span class="cm"># totéž</span>
+$ sudo chown -R www-data:www-data /var/www/web</pre>
+    <p class="muted">Vlastníka může měnit jen root. Běžný uživatel může změnit skupinu svého souboru na jinou svou skupinu.</p>
+    <h3>umask — výchozí práva</h3>
+<pre>$ umask
+<span class="out">0022</span>       <span class="cm"># nové soubory 644, adresáře 755</span>
+$ umask 027   <span class="cm"># → 640 a 750</span></pre>
+  </article>
+
+  <article class="card c6"><h2>Práva přes členství ve skupině</h2>
+    <p>Nejčistší způsob, jak dát přístup více lidem: přidělit práva skupině a lidi do ní přidávat a odebírat.</p>
+<pre><span class="cm"># sdílený adresář pro tým</span>
+$ sudo addgroup projekt
+$ sudo mkdir /srv/projekt
+$ sudo chown root:projekt /srv/projekt
+$ sudo chmod 2770 /srv/projekt     <span class="cm"># 2 = SGID, nové soubory dědí skupinu</span>
+
+<span class="cm"># přidělit přístup</span>
+$ sudo gpasswd -a jan projekt
+<span class="cm"># odebrat přístup</span>
+$ sudo gpasswd -d jan projekt</pre>
+  </article>
+  <article class="card c6"><h2>Speciální bity</h2>
+    <div class="tbl"><table>
+      <tr><th>Bit</th><th>Hodnota</th><th>Účinek</th><th>Příklad</th></tr>
+      <tr><td><b>SUID</b></td><td>4000 · <code>u+s</code></td><td>program běží s právy vlastníka souboru</td><td><code>/usr/bin/passwd</code></td></tr>
+      <tr><td><b>SGID</b></td><td>2000 · <code>g+s</code></td><td>u adresáře: nové soubory dědí jeho skupinu</td><td>týmový adresář</td></tr>
+      <tr><td><b>Sticky</b></td><td>1000 · <code>+t</code></td><td>soubory v adresáři smí mazat jen jejich vlastník</td><td><code>/tmp</code></td></tr>
+    </table></div>
+<pre>$ ls -ld /tmp /usr/bin/passwd
+<span class="out">drwxrwxrwt  root root /tmp
+-rwsr-xr-x  root root /usr/bin/passwd</span>
+$ find / -perm -4000 -type f 2&gt;/dev/null   <span class="cm"># všechny SUID programy</span></pre>
+  </article>
+
+  <article class="card c12"><h2>ACL — práva pro konkrétního uživatele</h2>
+    <p>Klasická práva znají jen jednoho vlastníka a jednu skupinu. Když potřebujeme dát přístup jednomu dalšímu člověku bez nové skupiny, použijeme ACL (<code>sudo apt install acl</code>).</p>
+    <div class="grid" style="margin:0">
+      <div class="c6">
+<pre><span class="cm"># přidělit</span>
+$ setfacl -m u:petr:rw zadani.odt          <span class="cm"># petr smí číst a zapisovat</span>
+$ setfacl -m g:ucitele:r hodnoceni.ods     <span class="cm"># skupina smí číst</span>
+$ setfacl -R -m u:petr:rwX projekt/        <span class="cm"># rekurzivně</span>
+$ setfacl -d -m u:petr:rw projekt/         <span class="cm"># výchozí pro nové soubory</span></pre>
+      </div>
+      <div class="c6">
+<pre><span class="cm"># zkontrolovat a odebrat</span>
+$ getfacl zadani.odt
+<span class="out">user::rw-
+user:petr:rw-
+group::r--
+mask::rw-
+other::---</span>
+$ setfacl -x u:petr zadani.odt             <span class="cm"># odebrat petrovi</span>
+$ setfacl -b zadani.odt                    <span class="cm"># odebrat všechna ACL</span></pre>
+      </div>
+    </div>
+    <div class="callout ok">Soubor s ACL poznáte podle znaménka <code>+</code> ve výpisu: <code>-rw-rw----+</code>.</div>
+  </article>
+</div>
+</section>
+
+<!-- ============ 12 ============ -->
+<section id="k12" class="view wrap chapter" data-title="Instalace a aktualizace balíčků">
+<header class="ch-head">
+  <div class="kicker">Kapitola 12 / 12 · Správa systému</div>
+  <h1>Instalace a aktualizace balíčků</h1>
+  <p class="lead">Software v Debianu instalujeme z repozitářů pomocí apt. Ten stáhne balíček, ověří jeho podpis, doinstaluje závislosti a později ho umí i aktualizovat.</p>
+</header>
+<div class="grid">
+  <article class="card c7"><h2>apt — každodenní příkazy</h2>
+    <div class="syntax"><b>sudo apt</b> <i>update|upgrade|install|remove|purge|search|show</i> <em>[balíček]</em></div>
+<pre>$ sudo apt update                <span class="cm"># stáhnout aktuální seznam balíčků</span>
+$ apt list --upgradable          <span class="cm"># co se dá aktualizovat</span>
+$ sudo apt upgrade               <span class="cm"># aktualizovat nainstalované</span>
+$ sudo apt full-upgrade          <span class="cm"># … i když je třeba něco přidat/odebrat</span>
+
+$ apt search "web server"        <span class="cm"># hledat</span>
+$ apt show nginx                 <span class="cm"># popis, verze, závislosti</span>
+$ sudo apt install nginx curl    <span class="cm"># nainstalovat (i víc najednou)</span>
+$ sudo apt install -y htop       <span class="cm"># bez dotazu na potvrzení</span>
+
+$ sudo apt remove nginx          <span class="cm"># odebrat, konfigurace zůstane</span>
+$ sudo apt purge nginx           <span class="cm"># odebrat včetně konfigurace</span>
+$ sudo apt autoremove            <span class="cm"># uklidit nepotřebné závislosti</span>
+$ sudo apt clean                 <span class="cm"># smazat stažené .deb z cache</span></pre>
+  </article>
+  <article class="card c5"><h2>Jak apt funguje</h2>
+    <div class="flow"><span>repozitář</span><i>→</i><span>apt update</span><i>→</i><span>seznam balíčků</span></div>
+    <div class="flow"><span>apt install</span><i>→</i><span>stáhne .deb</span><i>→</i><span>ověří podpis</span><i>→</i><span>dpkg</span></div>
+    <div class="callout"><b>update ≠ upgrade.</b> <code>update</code> jen zjistí, co je nového. Nainstaluje to až <code>upgrade</code>. Proto se píšou spolu: <code>sudo apt update &amp;&amp; sudo apt upgrade</code>.</div>
+    <h3>apt × apt-get</h3>
+    <p><code>apt</code> je pohodlnější pro člověka (průběh, barvy). Ve skriptech se používá <code>apt-get</code>, protože jeho výstup se nemění.</p>
+  </article>
+
+  <article class="card c6"><h2>dpkg — práce s jednotlivými .deb</h2>
+<pre>$ sudo apt install ./program_1.2_amd64.deb   <span class="cm"># doporučeno: vyřeší závislosti</span>
+$ sudo dpkg -i program_1.2_amd64.deb         <span class="cm"># nízkoúrovňově</span>
+$ sudo apt -f install                        <span class="cm"># dořešit chybějící závislosti</span>
+
+$ dpkg -l | grep nginx           <span class="cm"># je nainstalován?</span>
+$ dpkg -L nginx                  <span class="cm"># jaké soubory balíček obsahuje</span>
+$ dpkg -S /usr/sbin/sshd         <span class="cm"># ke kterému balíčku soubor patří</span>
+$ apt list --installed | wc -l   <span class="cm"># počet nainstalovaných</span></pre>
+    <div class="callout warn">.deb soubory stažené z neznámých webů nejsou ověřené. Instalujte primárně z oficiálních repozitářů.</div>
+  </article>
+  <article class="card c6"><h2>Repozitáře</h2>
+    <p>Debian 13 „trixie“ používá formát deb822 v souboru <code>/etc/apt/sources.list.d/debian.sources</code> (starší systémy mají <code>/etc/apt/sources.list</code>).</p>
+<pre>Types: deb
+URIs: https://deb.debian.org/debian
+Suites: trixie trixie-updates
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb
+URIs: https://security.debian.org/debian-security
+Suites: trixie-security
+Components: main contrib non-free non-free-firmware</pre>
+    <div class="tbl"><table>
+      <tr><td><code>main</code></td><td>svobodný software, plně podporovaný</td></tr>
+      <tr><td><code>contrib</code></td><td>svobodný, ale závisí na nesvobodném</td></tr>
+      <tr><td><code>non-free(-firmware)</code></td><td>nesvobodný software a firmware (Wi-Fi, GPU)</td></tr>
+    </table></div>
+  </article>
+
+  <article class="card c6"><h2>Automatické bezpečnostní aktualizace</h2>
+<pre>$ sudo apt install unattended-upgrades
+$ sudo dpkg-reconfigure -plow unattended-upgrades
+$ systemctl list-timers apt-daily*        <span class="cm"># kdy poběží</span>
+$ less /var/log/unattended-upgrades/unattended-upgrades.log</pre>
+    <p class="muted">Na serverech je to rozumný základ: bezpečnostní opravy se nainstalují samy, větší změny dělá správce ručně.</p>
+  </article>
+  <article class="card c6"><h2>Další způsoby instalace</h2>
+    <div class="tbl"><table>
+      <tr><th>Zdroj</th><th>Příkaz</th><th>Poznámka</th></tr>
+      <tr><td>Flatpak</td><td><code>flatpak install flathub org.gimp.GIMP</code></td><td>desktopové aplikace v izolaci, novější verze</td></tr>
+      <tr><td>Snap</td><td><code>sudo snap install code --classic</code></td><td>hlavně Ubuntu</td></tr>
+      <tr><td>Repozitář výrobce</td><td>klíč + soubor v <code>sources.list.d</code></td><td>Docker, VS Code, Google Chrome</td></tr>
+      <tr><td>pip / npm</td><td><code>pipx install …</code>, <code>npm i -g …</code></td><td>nástroje jazyků; do systému raději přes <code>pipx</code> nebo venv</td></tr>
+    </table></div>
+    <div class="callout ok"><b>Shrnutí kurzu:</b> nainstalovat distribuci (kap. 3), najít se v souborech (4), upravit konfiguraci (5), zpracovat výstupy (6–7), hlídat procesy (8) a jako správce (9) spravovat uživatele (10), práva (11) a software (12).</div>
+  </article>
+</div>
+</section>
+
+<div class="wrap"><nav class="pager" id="pager" hidden></nav></div>
+<footer>Výuková prezentace · Úvod do operačních systémů · Unix-like OS · vizuální styl vychází z design systému VOŠ, SPŠ a SOŠ Varnsdorf.</footer>
+
+<script>
+(function(){
+  // zvýraznění řádků v ukázkách kódu
+  document.querySelectorAll('pre').forEach(function(pre){
+    var lines = pre.innerHTML.split('\n');
+    pre.innerHTML = lines.map(function(l){
+      if (/^\s*#(?!\s*(apt|usermod|exit)\b)/.test(l) && l.indexOf('class=')===-1) return '<span class="cm">'+l+'</span>';
+      if (/^\$ /.test(l)) return '<span class="pr">$</span>'+l.slice(1);
+      if (/^# (apt|usermod|exit)\b/.test(l)) return '<span class="pr">#</span>'+l.slice(1);
+      return l;
+    }).join('\n');
+  });
+
+  var views = Array.prototype.slice.call(document.querySelectorAll('.view'));
+  var chapters = views.filter(function(v){ return v.classList.contains('chapter'); });
+  var pager = document.getElementById('pager');
+  var barTitle = document.getElementById('barTitle');
+  var barPrev = document.getElementById('barPrev');
+  var barNext = document.getElementById('barNext');
+
+  function setLink(a, target){
+    if (target){ a.href = '#'+target.id; a.removeAttribute('aria-disabled'); }
+    else { a.href = '#prehled'; a.setAttribute('aria-disabled','true'); }
+  }
+
+  function show(){
+    var id = (location.hash || '').replace('#','') || 'prehled';
+    var current = document.getElementById(id);
+    if (!current || !current.classList.contains('view')) { current = document.getElementById('prehled'); id = 'prehled'; }
+    views.forEach(function(v){ v.hidden = (v !== current); });
+    var i = chapters.indexOf(current);
+    if (i === -1){
+      barTitle.textContent = 'Přehled kapitol';
+      setLink(barPrev, null); setLink(barNext, chapters[0]);
+      pager.hidden = true;
+    } else {
+      barTitle.textContent = (i+1) + ' / ' + chapters.length + ' · ' + current.dataset.title;
+      var prev = chapters[i-1], next = chapters[i+1];
+      setLink(barPrev, prev || document.getElementById('prehled'));
+      if (!prev) barPrev.removeAttribute('aria-disabled');
+      setLink(barNext, next);
+      pager.innerHTML =
+        (prev ? '<a class="btn" href="#'+prev.id+'"><span>← <small>Kapitola '+i+'</small>'+prev.dataset.title+'</span></a>'
+              : '<a class="btn" href="#prehled"><span>← <small>Zpět</small>Přehled kapitol</span></a>') +
+        (next ? '<a class="btn next" href="#'+next.id+'"><span><small>Kapitola '+(i+2)+'</small>'+next.dataset.title+' →</span></a>'
+              : '<a class="btn next" href="#prehled"><span><small>Konec</small>Přehled kapitol →</span></a>');
+      pager.hidden = false;
+    }
+    document.title = (i === -1 ? '' : current.dataset.title + ' · ') + 'Unix-like operační systémy';
+    window.scrollTo(0,0);
+  }
+
+  window.addEventListener('hashchange', show);
+  document.addEventListener('keydown', function(e){
+    if (e.target.closest('input,textarea,select') || e.altKey || e.ctrlKey || e.metaKey) return;
+    var id = (location.hash || '#prehled').slice(1);
+    var cur = document.getElementById(id);
+    var i = chapters.indexOf(cur);
+    if (e.key === 'ArrowRight'){ var n = i === -1 ? chapters[0] : chapters[i+1]; if (n) location.hash = n.id; }
+    else if (e.key === 'ArrowLeft'){ if (i > 0) location.hash = chapters[i-1].id; else if (i === 0) location.hash = 'prehled'; }
+    else if (e.key === 'Escape'){ location.hash = 'prehled'; }
+  });
+  show();
+})();
+</script>
+</body>
+</html>
