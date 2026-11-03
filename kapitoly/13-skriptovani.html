@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Skriptování v bashi · Unix-like operační systémy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-chapter="13">
+
+<div class="bar"><div class="bar-in">
+  <a class="brand" href="../index.html">Unix-like <span>OS</span></a>
+  <div class="bar-ch" id="barTitle">13 · Skriptování v bashi</div>
+  <div class="bar-nav">
+    <a class="btn" id="barPrev" href="../index.html" aria-label="Předchozí kapitola">←</a>
+    <a class="btn" href="../index.html">Přehled</a>
+    <a class="btn" id="barNext" href="14-cron.html" aria-label="Další kapitola">→</a>
+  </div>
+</div></div>
+
+<main class="wrap chapter">
+<header class="ch-head">
+  <div class="kicker">Kapitola 13 · Skriptování</div>
+  <h1>Skriptování v bashi</h1>
+  <p class="lead">Skript je textový soubor s příkazy, které by jinak člověk psal ručně jeden po druhém. Stačí ho jednou napsat a pak spouštět znovu a znovu. Ukázky jdou od prvního „Ahoj, světe“ přes vstupy, výstupy, podmínky a cykly až po proměnné prostředí a regulární výrazy.</p>
+</header>
+<div class="grid">
+  <article class="card c7"><h2>Jak vytvořit skript</h2>
+    <ol class="steps">
+      <li><span>Otevřete editor s novým souborem: <code>nano ahoj.sh</code> (kapitola 5). Přípona <code>.sh</code> není povinná, ale ukazuje, co je soubor zač.</span></li>
+      <li><span>Na první řádek napište <b>shebang</b> <code>#!/bin/bash</code>. Říká systému, kterým programem se má skript vykonat.</span></li>
+      <li><span>Pod něj napište příkazy, každý na vlastní řádek. Řádky začínající <code>#</code> jsou komentáře.</span></li>
+      <li><span>Uložte (<span class="kbd">Ctrl</span>+<span class="kbd">O</span>) a zavřete editor (<span class="kbd">Ctrl</span>+<span class="kbd">X</span>).</span></li>
+      <li><span>Přidejte právo ke spuštění <code>chmod +x ahoj.sh</code> a spusťte <code>./ahoj.sh</code>.</span></li>
+    </ol>
+<pre class="script" data-file="ahoj.sh">#!/bin/bash
+# Můj první skript
+echo "Ahoj, světe!"
+echo "Dnes je $(date +%d.%m.%Y)."</pre>
+  </article>
+  <article class="card c5"><h2>Oprávnění ke spuštění</h2>
+    <p>Nový soubor dostane práva <span class="perms">rw-r--r--</span>, tedy čtení a zápis, ale ne spuštění. Bash ho proto odmítne. Právo <code>x</code> přidá <code>chmod</code> (kapitola 11).</p>
+<pre class="run">$ ls -l ahoj.sh
+<span class="out">-rw-r--r-- 1 petr petr 88 Nov  3 08:28 ahoj.sh</span>
+$ ./ahoj.sh
+<span class="out">bash: ./ahoj.sh: Permission denied</span>
+$ chmod +x ahoj.sh
+$ ls -l ahoj.sh
+<span class="out">-rwxr-xr-x 1 petr petr 88 Nov  3 08:28 ahoj.sh</span>
+$ ./ahoj.sh
+<span class="out">Ahoj, světe!</span>
+<span class="out">Dnes je 03.11.2026.</span></pre>
+    <div class="tbl"><table>
+      <tr><td><code>chmod +x skript.sh</code></td><td>spustit smí všichni, kdo ho mohou číst</td></tr>
+      <tr><td><code>chmod u+x skript.sh</code></td><td>spustit smí jen vlastník</td></tr>
+      <tr><td><code>chmod 700 skript.sh</code></td><td>vlastník vše, ostatní nic (soukromý skript)</td></tr>
+    </table></div>
+  </article>
+
+  <article class="card c7"><h2>Jak skript spustit</h2>
+    <div class="tbl"><table>
+      <tr><th>Zápis</th><th>Potřebuje <code>x</code>?</th><th>Co se stane</th></tr>
+      <tr><td><code>./ahoj.sh</code></td><td>ano</td><td>spustí skript z aktuálního adresáře; interpret určí shebang</td></tr>
+      <tr><td><code>~/skripty/ahoj.sh</code></td><td>ano</td><td>totéž, s plnou cestou, odkudkoli</td></tr>
+      <tr><td><code>bash ahoj.sh</code></td><td>ne</td><td>bash soubor jen přečte; shebang se nepoužije</td></tr>
+      <tr><td><code>ahoj</code></td><td>ano</td><td>skript je v adresáři z <code>$PATH</code>, např. <code>~/bin</code> (příklad 19)</td></tr>
+      <tr><td><code>source ahoj.sh</code><br><code>. ahoj.sh</code></td><td>ne</td><td>vykoná se <b>v aktuálním shellu</b>, takže proměnné a <code>cd</code> zůstanou platit i po skončení</td></tr>
+    </table></div>
+    <div class="callout"><b>Proč <code>./</code>?</b> Příkazy se hledají jen v adresářích z <code>$PATH</code>, aktuální adresář mezi nimi z bezpečnostních důvodů není. Samotné <code>ahoj.sh</code> skončí hláškou <code>command not found</code>.</div>
+  </article>
+  <article class="card c5"><h2>Časté chyby při spuštění</h2>
+    <div class="tbl"><table>
+      <tr><th>Hláška</th><th>Příčina a řešení</th></tr>
+      <tr><td><code>Permission denied</code></td><td>chybí právo <code>x</code> → <code>chmod +x</code></td></tr>
+      <tr><td><code>command not found</code></td><td>chybí <code>./</code> před názvem nebo překlep</td></tr>
+      <tr><td><code>/bin/bash^M: bad interpreter</code></td><td>soubor má konce řádků z Windows (CRLF). Ve VS Code přepněte vpravo dole <b>CRLF → LF</b>, nebo <code>sed -i 's/\r$//' skript.sh</code></td></tr>
+      <tr><td><code>syntax error near unexpected token</code></td><td>chybí <code>then</code>, <code>fi</code>, <code>done</code> nebo <code>;;</code></td></tr>
+      <tr><td><code>[: missing `]'</code></td><td>chybí mezera uvnitř <code>[ … ]</code></td></tr>
+    </table></div>
+    <p class="muted">Kontrola syntaxe bez spuštění: <code>bash -n skript.sh</code>.</p>
+  </article>
+
+  <div class="part-h sec"><h2>První kroky</h2><span>shebang, komentáře, proměnné a substituce</span></div>
+  <article class="card c6"><h2><span class="exn">01</span>Ahoj, světe</h2>
+    <p>Nejmenší možný skript. První řádek <code>#!/bin/bash</code> (shebang) říká systému, kterým interpretem soubor spustit. Vše za <code>#</code> je komentář.</p>
+<pre class="script" data-file="ahoj.sh">#!/bin/bash
+# Můj první skript
+echo "Ahoj, světe!"
+echo "Dnes je $(date +%d.%m.%Y)."</pre>
+<pre class="run">$ ./ahoj.sh
+<span class="out">Ahoj, světe!</span>
+<span class="out">Dnes je 03.11.2026.</span></pre>
+  </article>
+  <article class="card c6"><h2><span class="exn">02</span>Proměnné</h2>
+    <p>Proměnnou přiřadíme <b>bez mezer</b> kolem <code>=</code> a čteme ji přes <code>$</code>. Hodnotu dávejte do uvozovek; ve dvojitých se proměnné rozbalí, v jednoduchých ne.</p>
+<pre class="script" data-file="promenne.sh">#!/bin/bash
+jmeno="Petr"
+predmet="Operační systémy"
+pocet=3
+
+echo "Uživatel: $jmeno"
+echo "Předmět:  ${predmet}"
+echo 'Doslova:  $jmeno'          <span class="cm"># jednoduché uvozovky nerozbalují</span>
+echo "Soubor:   ${jmeno}_${pocet}.txt"   <span class="cm"># složené závorky oddělí název</span></pre>
+<pre class="run">$ ./promenne.sh
+<span class="out">Uživatel: Petr</span>
+<span class="out">Předmět:  Operační systémy</span>
+<span class="out">Doslova:  $jmeno</span>
+<span class="out">Soubor:   Petr_3.txt</span></pre>
+    <p class="muted"><code>jmeno = "Petr"</code> s mezerami je chyba: bash by hledal příkaz <code>jmeno</code>.</p>
+  </article>
+  <article class="card c12"><h2><span class="exn">03</span>Výstup příkazu a aritmetika</h2>
+    <p><code>$(prikaz)</code> vloží výstup příkazu do textu nebo proměnné. <code>$(( ))</code> počítá s celými čísly.</p>
+<div class="split"><pre class="script" data-file="substituce.sh">#!/bin/bash
+uzivatel=$(whoami)
+soubory=$(ls /etc | wc -l)
+echo "Přihlášen je $uzivatel, v /etc je $soubory položek."
+
+a=17
+b=5
+echo "Součet:  $((a + b))"
+echo "Podíl:   $((a / b)) zbytek $((a % b))"
+echo "Mocnina: $((2 ** 10))"
+((a++))                          <span class="cm"># zvětšení o 1</span>
+echo "a je teď $a"</pre><pre class="run">$ ./substituce.sh
+<span class="out">Přihlášen je petr, v /etc je 166 položek.</span>
+<span class="out">Součet:  22</span>
+<span class="out">Podíl:   3 zbytek 2</span>
+<span class="out">Mocnina: 1024</span>
+<span class="out">a je teď 18</span></pre></div>
+  </article>
+  <div class="part-h sec"><h2>Vstupy a výstupy</h2><span>argumenty, read, printf, přesměrování a návratové kódy</span></div>
+  <article class="card c6"><h2><span class="exn">04</span>Argumenty z příkazové řádky</h2>
+    <p>Hodnoty zadané za názvem skriptu jsou v <code>$1</code>, <code>$2</code>… Jejich počet je <code>$#</code>, všechny najednou <code>"$@"</code>.</p>
+<div class="tbl"><table>
+<tr><td><code>$0</code></td><td>název skriptu</td><td><code>$#</code></td><td>počet argumentů</td></tr>
+<tr><td><code>$1 … $9</code></td><td>jednotlivé argumenty</td><td><code>"$@"</code></td><td>všechny, každý zvlášť</td></tr>
+</table></div>
+<pre class="script" data-file="argumenty.sh">#!/bin/bash
+echo "Skript:      $0"
+echo "Počet:       $#"
+echo "První:       $1"
+echo "Druhý:       $2"
+for arg in "$@"; do
+    echo " - $arg"
+done</pre>
+<pre class="run">$ ./argumenty.sh jablko "zelená hruška" švestka
+<span class="out">Skript:      ./argumenty.sh</span>
+<span class="out">Počet:       3</span>
+<span class="out">První:       jablko</span>
+<span class="out">Druhý:       zelená hruška</span>
+<span class="out"> - jablko</span>
+<span class="out"> - zelená hruška</span>
+<span class="out"> - švestka</span></pre>
+  </article>
+  <article class="card c6"><h2><span class="exn">05</span>Čtení vstupu: read</h2>
+    <p><code>read</code> počká, až uživatel napíše řádek a stiskne Enter. Volba <code>-p</code> vypíše výzvu, <code>-s</code> skryje psaný text (hesla).</p>
+<pre class="script" data-file="dotaz.sh">#!/bin/bash
+read -p "Jak se jmenuješ? " jmeno
+read -p "Kolik ti je let? " vek
+read -s -p "Tajné heslo: " heslo
+echo                             <span class="cm"># nový řádek po skrytém vstupu</span>
+
+echo "Ahoj $jmeno, za 10 let ti bude $((vek + 10))."
+echo "Heslo má ${#heslo} znaků."</pre>
+<pre class="run">$ ./dotaz.sh
+<span class="out">Jak se jmenuješ? Jana</span>
+<span class="out">Kolik ti je let? 19</span>
+<span class="out">Tajné heslo: </span>
+<span class="out">Ahoj Jana, za 10 let ti bude 29.</span>
+<span class="out">Heslo má 8 znaků.</span></pre>
+  </article>
+  <article class="card c6"><h2><span class="exn">06</span>Formátovaný výstup: printf</h2>
+    <p><code>echo</code> stačí na jednoduchý text. Pro zarovnané sloupce je lepší <code>printf</code>: <code>%s</code> text, <code>%d</code> celé číslo, <code>%-10s</code> zarovnání vlevo na 10 znaků.</p>
+<pre class="script" data-file="tabulka.sh">#!/bin/bash
+printf "%-12s %8s\n" "Cesta" "Soubory"
+printf "%-12s %8s\n" "-----" "-------"
+for d in /etc /bin /usr /var; do
+    printf "%-12s %8d\n" "$d" "$(ls "$d" | wc -l)"
+done
+printf "Hotovo v %s\n" "$(date +%H:%M)"</pre>
+<pre class="run">$ ./tabulka.sh
+<span class="out">Cesta         Soubory</span>
+<span class="out">-----         -------</span>
+<span class="out">/etc              166</span>
+<span class="out">/bin             1454</span>
+<span class="out">/usr               10</span>
+<span class="out">/var               11</span>
+<span class="out">Hotovo v 08:28</span></pre>
+    <p class="muted">Čísla se na každém počítači liší. Pozor: <code>printf</code> měří šířku v bajtech a písmena s diakritikou mají 2 bajty, proto jsou v zarovnaných sloupcích nadpisy bez háčků a čárek.</p>
+  </article>
+  <article class="card c6"><h2><span class="exn">07</span>Zápis do souboru, chyby a here-doc</h2>
+    <p>Uvnitř skriptu fungují stejná přesměrování jako v terminálu (kapitola 6). Chybové hlášky patří na <b>stderr</b>: <code>&gt;&amp;2</code>. Here-doc <code>&lt;&lt;EOF</code> zapíše víc řádků najednou.</p>
+<pre class="script" data-file="zapis.sh">#!/bin/bash
+log="zaznam.log"
+
+echo "$(date +%T) start" &gt;&gt; "$log"       <span class="cm"># připojí řádek</span>
+echo "Toto je chybová hláška" &gt;&amp;2      <span class="cm"># jde na stderr</span>
+
+cat &gt; info.txt &lt;&lt;EOF
+Počítač: $(hostname)
+Uživatel: $USER
+Jádro: $(uname -r)
+EOF
+
+echo "Vytvořen soubor info.txt ($(wc -l &lt; info.txt) řádky)"</pre>
+<pre class="run">$ ./zapis.sh 2&gt;/dev/null
+<span class="out">Vytvořen soubor info.txt (3 řádky)</span>
+$ cat zaznam.log
+<span class="out">08:28:05 start</span></pre>
+  </article>
+  <article class="card c12"><h2><span class="exn">08</span>Návratový kód a exit</h2>
+    <p>Každý příkaz končí kódem: <code>0</code> = úspěch, cokoli jiného = chyba. Poslední kód je v <code>$?</code>. Skript ho vrací příkazem <code>exit</code>, takže jde řetězit pomocí <code>&amp;&amp;</code> a <code>||</code>.</p>
+<div class="split"><pre class="script" data-file="kontrola.sh">#!/bin/bash
+if [ $# -ne 1 ]; then
+    echo "Použití: $0 UŽIVATEL" &gt;&amp;2
+    exit 2
+fi
+
+grep -q "^$1:" /etc/passwd
+if [ $? -eq 0 ]; then
+    echo "Účet $1 existuje."
+    exit 0
+else
+    echo "Účet $1 neexistuje."
+    exit 1
+fi</pre><pre class="run">$ ./kontrola.sh root
+<span class="out">Účet root existuje.</span>
+$ ./kontrola.sh nikdo; echo "kód: $?"
+<span class="out">Účet nikdo neexistuje.</span>
+<span class="out">kód: 1</span>
+$ ./kontrola.sh; echo "kód: $?"
+<span class="out">Použití: ./kontrola.sh UŽIVATEL</span>
+<span class="out">kód: 2</span></pre></div>
+  </article>
+  <div class="part-h sec"><h2>Řídicí struktury</h2><span>podmínky, case, cykly a funkce</span></div>
+  <article class="card c6"><h2><span class="exn">09</span>Podmínka if a testy souborů</h2>
+    <p><code>[[ … ]]</code> je test; mezery za <code>[[</code> a před <code>]]</code> jsou povinné. Testy souborů:</p>
+<div class="tbl"><table>
+<tr><td><code>-e</code></td><td>existuje</td><td><code>-f</code></td><td>běžný soubor</td><td><code>-d</code></td><td>adresář</td></tr>
+<tr><td><code>-r</code></td><td>lze číst</td><td><code>-w</code></td><td>lze zapisovat</td><td><code>-x</code></td><td>lze spustit</td></tr>
+<tr><td><code>-s</code></td><td>není prázdný</td><td><code>-z "$x"</code></td><td>prázdný řetězec</td><td><code>!</code></td><td>negace</td></tr>
+</table></div>
+<pre class="script" data-file="soubor.sh">#!/bin/bash
+cesta="$1"
+
+if [[ -z "$cesta" ]]; then
+    echo "Zadej cestu."
+elif [[ -d "$cesta" ]]; then
+    echo "$cesta je adresář."
+elif [[ -f "$cesta" ]]; then
+    echo "$cesta je soubor, velikost $(stat -c %s "$cesta") B."
+    [[ -x "$cesta" ]] &amp;&amp; echo "Je spustitelný."
+else
+    echo "$cesta neexistuje."
+fi</pre>
+<pre class="run">$ ./soubor.sh /etc
+<span class="out">/etc je adresář.</span>
+$ ./soubor.sh soubor.sh
+<span class="out">soubor.sh je soubor, velikost 316 B.</span>
+<span class="out">Je spustitelný.</span>
+$ ./soubor.sh /nic
+<span class="out">/nic neexistuje.</span></pre>
+  </article>
+  <article class="card c6"><h2><span class="exn">10</span>Porovnávání čísel</h2>
+    <p>Čísla porovnáváme v <code>(( ))</code> běžnými znaménky, nebo v <code>[[ ]]</code> zkratkami <code>-eq -ne -lt -le -gt -ge</code>. Znak <code>&lt;</code> v <code>[[ ]]</code> porovnává <b>text</b>, ne čísla.</p>
+<pre class="script" data-file="znamka.sh">#!/bin/bash
+read -p "Počet bodů (0–100): " body
+
+if (( body &gt;= 90 )); then
+    znamka=1
+elif (( body &gt;= 75 )); then
+    znamka=2
+elif (( body &gt;= 60 )); then
+    znamka=3
+elif [[ $body -ge 45 ]]; then
+    znamka=4
+else
+    znamka=5
+fi
+echo "Známka: $znamka"</pre>
+<pre class="run">$ ./znamka.sh
+<span class="out">Počet bodů (0–100): 78</span>
+<span class="out">Známka: 2</span></pre>
+  </article>
+  <article class="card c6"><h2><span class="exn">11</span>Výběr z možností: case</h2>
+    <p><code>case</code> porovná hodnotu se vzory (lze použít <code>*</code>, <code>?</code>, <code>|</code>). Každá větev končí <code>;;</code>, celý blok <code>esac</code>. Hodí se na zpracování voleb skriptu.</p>
+<pre class="script" data-file="sluzba.sh">#!/bin/bash
+case "$1" in
+    start)
+        echo "Spouštím službu…" ;;
+    stop|halt)
+        echo "Zastavuji službu…" ;;
+    status)
+        echo "Služba běží." ;;
+    *.txt)
+        echo "Zadal jsi textový soubor $1." ;;
+    *)
+        echo "Použití: $0 {start|stop|status}"
+        exit 1 ;;
+esac</pre>
+<pre class="run">$ ./sluzba.sh start
+<span class="out">Spouštím službu…</span>
+$ ./sluzba.sh halt
+<span class="out">Zastavuji službu…</span>
+$ ./sluzba.sh poznamky.txt
+<span class="out">Zadal jsi textový soubor poznamky.txt.</span>
+$ ./sluzba.sh restart
+<span class="out">Použití: ./sluzba.sh {start|stop|status}</span></pre>
+  </article>
+  <article class="card c6"><h2><span class="exn">12</span>Cyklus for</h2>
+    <p><code>for</code> projde seznam hodnot: vyjmenovaný, rozsah <code>{1..5}</code>, soubory podle masky, nebo výstup příkazu. Existuje i zápis podobný jazyku C.</p>
+<pre class="script" data-file="cykly.sh">#!/bin/bash
+for os in Debian Fedora Arch; do
+    echo "Distribuce: $os"
+done
+
+for i in {1..5}; do
+    echo -n "$i "
+done
+echo
+
+for ((i = 10; i &gt; 0; i -= 3)); do
+    echo -n "$i "
+done
+echo
+
+for f in /etc/host*; do
+    echo "Soubor: $f"
+done</pre>
+<pre class="run">$ ./cykly.sh
+<span class="out">Distribuce: Debian</span>
+<span class="out">Distribuce: Fedora</span>
+<span class="out">Distribuce: Arch</span>
+<span class="out">1 2 3 4 5 </span>
+<span class="out">10 7 4 1 </span>
+<span class="out">Soubor: /etc/host.conf</span>
+<span class="out">Soubor: /etc/hostname</span>
+<span class="out">Soubor: /etc/hosts</span></pre>
+  </article>
+  <article class="card c6"><h2><span class="exn">13</span>Cyklus while a čtení souboru</h2>
+    <p><code>while</code> opakuje, dokud je podmínka pravdivá. Spojení <code>while read</code> čte soubor řádek po řádku; <code>IFS=:</code> nastaví oddělovač, takže <code>read</code> rozdělí řádek do proměnných.</p>
+<pre class="script" data-file="ucty.sh">#!/bin/bash
+# Vypíše uživatele, kteří se mohou přihlásit (shell bash)
+pocet=0
+while IFS=: read -r jmeno x uid gid popis domov shell; do
+    if [[ "$shell" == "/bin/bash" ]]; then
+        echo "$jmeno (UID $uid) → $domov"
+        ((pocet++))
+    fi
+done &lt; /etc/passwd
+echo "Celkem: $pocet"</pre>
+<pre class="run">$ ./ucty.sh
+<span class="out">root (UID 0) → /root</span>
+<span class="out">petr (UID 1000) → /home/petr</span>
+<span class="out">Celkem: 2</span></pre>
+    <p class="muted">Výsledek závisí na účtech v systému.</p>
+  </article>
+  <article class="card c6"><h2><span class="exn">14</span>Hra: while, break a continue</h2>
+    <p><code>$RANDOM</code> dává náhodné číslo 0–32767. <code>while true</code> běží donekonečna, <code>break</code> cyklus ukončí a <code>continue</code> přeskočí na další kolo.</p>
+<pre class="script" data-file="hadani.sh">#!/bin/bash
+cislo=$((RANDOM % 20 + 1))
+pokusy=0
+echo "Myslím si číslo 1–20."
+
+while true; do
+    read -p "Tvůj tip: " tip
+    if ! [[ "$tip" =~ ^[0-9]+$ ]]; then
+        echo "To není číslo."
+        continue
+    fi
+    ((pokusy++))
+    if (( tip &lt; cislo )); then echo "Víc."
+    elif (( tip &gt; cislo )); then echo "Míň."
+    else
+        echo "Správně! Počet pokusů: $pokusy"
+        break
+    fi
+done</pre>
+<pre class="run">$ ./hadani.sh
+<span class="out">Myslím si číslo 1–20.</span>
+<span class="out">Tvůj tip: 10</span>
+<span class="out">Víc.</span>
+<span class="out">Tvůj tip: x</span>
+<span class="out">To není číslo.</span>
+<span class="out">Tvůj tip: 15</span>
+<span class="out">Míň.</span>
+<span class="out">Tvůj tip: 13</span>
+<span class="out">Víc.</span>
+<span class="out">Tvůj tip: 14</span>
+<span class="out">Správně! Počet pokusů: 4</span></pre>
+  </article>
+  <article class="card c6"><h2><span class="exn">15</span>Funkce</h2>
+    <p>Funkce pojmenuje opakovaný kus kódu. Argumenty dostává stejně jako skript (<code>$1</code>, <code>$#</code>), <code>local</code> omezí proměnnou na funkci. Výsledek se vrací výpisem (<code>echo</code>), <code>return</code> vrací jen kód 0–255.</p>
+<pre class="script" data-file="funkce.sh">#!/bin/bash
+nadpis() {
+    echo "=== $1 ==="
+}
+
+obsah_kruhu() {
+    local r=$1
+    echo $((314 * r * r / 100))
+}
+
+je_sude() {
+    (( $1 % 2 == 0 ))            <span class="cm"># kód 0 = pravda</span>
+}
+
+nadpis "Výpočty"
+echo "Kruh r=10: $(obsah_kruhu 10)"
+for n in 3 8; do
+    if je_sude "$n"; then echo "$n je sudé"; else echo "$n je liché"; fi
+done</pre>
+<pre class="run">$ ./funkce.sh
+<span class="out">=== Výpočty ===</span>
+<span class="out">Kruh r=10: 314</span>
+<span class="out">3 je liché</span>
+<span class="out">8 je sudé</span></pre>
+  </article>
+  <article class="card c6"><h2><span class="exn">16</span>Pole</h2>
+    <p>Pole uchová víc hodnot pod jedním jménem. <code>${pole[@]}</code> jsou všechny prvky, <code>${#pole[@]}</code> jejich počet, <code>+=</code> přidá prvek na konec.</p>
+<pre class="script" data-file="pole.sh">#!/bin/bash
+ovoce=("jablko" "hruška" "švestka")
+ovoce+=("meruňka")
+
+echo "První:  ${ovoce[0]}"
+echo "Počet:  ${#ovoce[@]}"
+echo "Všechny: ${ovoce[*]}"
+
+for i in "${!ovoce[@]}"; do
+    echo "$i: ${ovoce[$i]}"
+done
+
+soubory=(/etc/*.conf)          <span class="cm"># pole ze jmen souborů</span>
+echo "V /etc je ${#soubory[@]} souborů .conf"</pre>
+<pre class="run">$ ./pole.sh
+<span class="out">První:  jablko</span>
+<span class="out">Počet:  4</span>
+<span class="out">Všechny: jablko hruška švestka meruňka</span>
+<span class="out">0: jablko</span>
+<span class="out">1: hruška</span>
+<span class="out">2: švestka</span>
+<span class="out">3: meruňka</span>
+<span class="out">V /etc je 24 souborů .conf</span></pre>
+  </article>
+  <div class="part-h sec"><h2>Proměnné prostředí</h2><span>co skript dostane od systému a jak předat hodnotu dál</span></div>
+  <article class="card c12"><h2><span class="exn">17</span>Proměnné prostředí</h2>
+    <p>Shell předává každému programu sadu proměnných prostředí. Vypíšete je příkazem <code>env</code> nebo <code>printenv</code>. Zápis <code>${X:-výchozí}</code> použije náhradní hodnotu, když <code>X</code> není nastavena.</p>
+<div class="tbl"><table>
+<tr><td><code>$HOME</code></td><td>domovský adresář</td><td><code>$USER</code></td><td>přihlášený uživatel</td></tr>
+<tr><td><code>$PWD</code></td><td>aktuální adresář</td><td><code>$SHELL</code></td><td>výchozí shell</td></tr>
+<tr><td><code>$PATH</code></td><td>kde se hledají příkazy</td><td><code>$LANG</code></td><td>jazyk a kódování</td></tr>
+<tr><td><code>$HOSTNAME</code></td><td>jméno počítače</td><td><code>$$</code></td><td>PID tohoto skriptu</td></tr>
+</table></div>
+<div class="split"><pre class="script" data-file="prostredi.sh">#!/bin/bash
+echo "Uživatel: $USER, domov: $HOME"
+echo "Pracuji v: $PWD"
+echo "PID skriptu: $$"
+echo "Jazyk: ${LANG:-nenastaven}"
+echo "Editor: ${EDITOR:-nano}"
+
+echo "Adresáře v PATH:"
+echo "$PATH" | tr ':' '\n' | head -4</pre><pre class="run">$ ./prostredi.sh
+<span class="out">Uživatel: petr, domov: /home/petr</span>
+<span class="out">Pracuji v: /home/petr/skripty</span>
+<span class="out">PID skriptu: 762</span>
+<span class="out">Jazyk: cs_CZ.UTF-8</span>
+<span class="out">Editor: nano</span>
+<span class="out">Adresáře v PATH:</span>
+<span class="out">/usr/local/bin</span>
+<span class="out">/usr/bin</span>
+<span class="out">/bin</span>
+<span class="out">/usr/games</span>
+$ EDITOR=vim ./prostredi.sh | grep Editor
+<span class="out">Editor: vim</span></pre></div>
+    <p class="muted">Zápis <code>PROMENNA=hodnota ./skript.sh</code> nastaví proměnnou jen pro jedno spuštění.</p>
+  </article>
+  <article class="card c6"><h2><span class="exn">18</span>export: předání proměnné dalším programům</h2>
+    <p>Běžná proměnná platí jen v aktuálním shellu. Až po <code>export</code> ji uvidí i programy a skripty, které z něj spustíte. Opačným směrem to nefunguje: skript nezmění proměnné shellu, který ho spustil.</p>
+<pre class="script" data-file="export.sh">#!/bin/bash
+lokalni="jen tady"
+export SDILENA="vidí i potomci"
+
+bash -c 'echo "Potomek vidí: lokalni=[$lokalni] SDILENA=[$SDILENA]"'</pre>
+<pre class="run">$ ./export.sh
+<span class="out">Potomek vidí: lokalni=[] SDILENA=[vidí i potomci]</span>
+$ cat nastaveni.sh
+<span class="out"># nastaveni.sh</span>
+<span class="out">export PROJEKT="unix-like"</span>
+$ source nastaveni.sh   <span class="cm"># nebo zkráceně: . nastaveni.sh</span>
+$ echo $PROJEKT
+<span class="out">unix-like</span></pre>
+  </article>
+  <article class="card c6"><h2><span class="exn">19</span>Trvalé nastavení v ~/.bashrc</h2>
+    <p>Proměnné nastavené v terminálu zmizí po jeho zavření. Natrvalo je zapíšete do <code>~/.bashrc</code>, který bash načte při každém otevření terminálu. Tak si také přidáte vlastní adresář se skripty do <code>PATH</code>.</p>
+<pre class="script" data-file="~/.bashrc"># ~/.bashrc (konec souboru)
+export EDITOR=nano
+export PATH="$HOME/bin:$PATH"     <span class="cm"># moje skripty spustím odkudkoli</span>
+alias ll='ls -lah'</pre>
+<pre class="run">$ mkdir -p ~/bin &amp;&amp; mv ahoj.sh ~/bin/ahoj
+$ source ~/.bashrc
+$ ahoj
+<span class="out">Ahoj, světe!</span>
+<span class="out">Dnes je 03.11.2026.</span></pre>
+  </article>
+  <div class="part-h sec"><h2>Regulární výrazy ve skriptech</h2><span>kontrola vstupu, vytažení údajů a zpracování logu</span></div>
+  <article class="card c6"><h2><span class="exn">20</span>Kontrola vstupu: operátor =~</h2>
+    <p>V <code>[[ text =~ vzor ]]</code> je vpravo rozšířený regulární výraz (kapitola 7). Vzor je bezpečnější uložit do proměnné a psát <b>bez uvozovek</b>, jinak by se bral doslova.</p>
+<pre class="script" data-file="over.sh">#!/bin/bash
+re_email='^[a-z0-9._-]+@[a-z0-9.-]+\.[a-z]{2,}$'
+re_psc='^[0-9]{3} ?[0-9]{2}$'
+
+for vstup in "jan.novak@skola.cz" "spatny@email" "407 47" "4074"; do
+    if [[ $vstup =~ $re_email ]]; then
+        echo "$vstup → e-mail"
+    elif [[ $vstup =~ $re_psc ]]; then
+        echo "$vstup → PSČ"
+    else
+        echo "$vstup → neznámý formát"
+    fi
+done</pre>
+<pre class="run">$ ./over.sh
+<span class="out">jan.novak@skola.cz → e-mail</span>
+<span class="out">spatny@email → neznámý formát</span>
+<span class="out">407 47 → PSČ</span>
+<span class="out">4074 → neznámý formát</span></pre>
+  </article>
+  <article class="card c6"><h2><span class="exn">21</span>Vytažení částí: BASH_REMATCH</h2>
+    <p>Části vzoru v závorkách <code>( )</code> se po shodě uloží do pole <code>BASH_REMATCH</code>: <code>[0]</code> je celá shoda, <code>[1]</code> první závorka atd.</p>
+<pre class="script" data-file="datum.sh">#!/bin/bash
+re='^([0-9]{4})-([0-9]{2})-([0-9]{2})$'
+
+if [[ $1 =~ $re ]]; then
+    rok=${BASH_REMATCH[1]}
+    mesic=${BASH_REMATCH[2]}
+    den=${BASH_REMATCH[3]}
+    echo "Česky: $((10#$den)). $((10#$mesic)). $rok"
+else
+    echo "Zadej datum ve tvaru RRRR-MM-DD" &gt;&amp;2
+    exit 1
+fi</pre>
+<pre class="run">$ ./datum.sh 2026-11-03
+<span class="out">Česky: 3. 11. 2026</span>
+$ ./datum.sh 3.11.2026
+<span class="out">Zadej datum ve tvaru RRRR-MM-DD</span></pre>
+    <p class="muted"><code>10#</code> říká, že číslo je desítkové; bez toho by bash bral <code>08</code> a <code>09</code> jako chybné osmičkové číslo.</p>
+  </article>
+  <article class="card c12"><h2><span class="exn">22</span>Analýza logu: grep, sed a awk</h2>
+    <p>Skript vezme log webového serveru a vypíše přehled: kolik bylo požadavků, které IP adresy se ptaly nejčastěji a které stránky skončily chybou 404. Kombinuje <code>grep -E</code>, <code>sed -E</code> a roury.</p>
+<div class="split"><pre class="script" data-file="analyza.sh">#!/bin/bash
+log="${1:-access.log}"
+[[ -r "$log" ]] || { echo "Nelze číst $log" &gt;&amp;2; exit 1; }
+
+echo "Požadavků celkem: $(wc -l &lt; "$log")"
+
+echo "Nejčastější IP adresy:"
+grep -oE '^([0-9]{1,3}\.){3}[0-9]{1,3}' "$log" | sort | uniq -c | sort -rn | head -3
+
+echo "Chyby 404:"
+grep -E '" 404 ' "$log" | sed -E 's/.*"GET ([^ ]+) .*/  \1/' | sort -u
+
+echo "Požadavky podle hodiny:"
+sed -E 's/.*:([0-9]{2}):[0-9]{2}:[0-9]{2} .*/\1/' "$log" | sort | uniq -c</pre><pre class="run">$ head -2 access.log
+<span class="out">192.168.1.10 - - [03/Nov/2026:10:02:13 +0100] "GET / HTTP/1.1" 200 512</span>
+<span class="out">192.168.1.10 - - [03/Nov/2026:10:02:14 +0100] "GET /style.css HTTP/1.1" 200 512</span>
+$ ./analyza.sh access.log
+<span class="out">Požadavků celkem: 10</span>
+<span class="out">Nejčastější IP adresy:</span>
+<span class="out">      4 192.168.1.10</span>
+<span class="out">      3 203.0.113.7</span>
+<span class="out">      2 10.0.0.5</span>
+<span class="out">Chyby 404:</span>
+<span class="out">  /admin</span>
+<span class="out">  /stary-odkaz</span>
+<span class="out">  /wp-login.php</span>
+<span class="out">Požadavky podle hodiny:</span>
+<span class="out">      4 10</span>
+<span class="out">      5 11</span>
+<span class="out">      1 12</span></pre></div>
+  </article>
+  <article class="card c12"><h2><span class="exn">23</span>Shrnutí: zálohovací skript</h2>
+    <p>Všechno dohromady: argument s výchozí hodnotou, kontrola vstupu, funkce, proměnná prostředí, podmínky, regulární výraz a návratové kódy. Zabalí zadaný adresář do archivu s datem a ponechá jen 3 nejnovější zálohy.</p>
+<div class="split"><pre class="script" data-file="zaloha.sh">#!/bin/bash
+set -euo pipefail                <span class="cm"># při chybě skript hned skončí</span>
+
+zdroj="${1:-$HOME/dokumenty}"
+cil="${ZALOHY:-$HOME/zalohy}"
+ponechat=3
+
+chyba() { echo "CHYBA: $*" &gt;&amp;2; exit 1; }
+
+[[ -d "$zdroj" ]] || chyba "adresář $zdroj neexistuje"
+mkdir -p "$cil"
+
+nazev="$(basename "$zdroj")_$(date +%Y-%m-%d_%H%M%S).tar.gz"
+tar -czf "$cil/$nazev" -C "$(dirname "$zdroj")" "$(basename "$zdroj")"
+echo "Vytvořeno: $nazev ($(du -h "$cil/$nazev" | cut -f1))"
+
+# smazat starší zálohy, ponechat poslední $ponechat
+ls -1t "$cil" | grep -E '\.tar\.gz$' | tail -n +$((ponechat + 1)) | while read -r stary; do
+    rm -- "$cil/$stary"
+    echo "Smazáno:   $stary"
+done</pre><pre class="run">$ ./zaloha.sh ~/projekt
+<span class="out">Vytvořeno: projekt_2026-11-03_082808.tar.gz (4.0K)</span>
+<span class="out">Smazáno:   projekt_2026-10-30_180000.tar.gz</span>
+$ ls ~/zalohy
+<span class="out">projekt_2026-10-31_180000.tar.gz  projekt_2026-11-03_082808.tar.gz</span>
+<span class="out">projekt_2026-11-01_180000.tar.gz</span></pre></div>
+  </article>
+
+  <div class="part-h sec"><h2>Ladění a dobré zvyky</h2><span>aby skript dělal, co má, i za půl roku</span></div>
+  <article class="card c6"><h2>Ladění</h2>
+<pre class="run">$ bash -n skript.sh          <span class="cm"># jen kontrola syntaxe</span>
+$ bash -x skript.sh          <span class="cm"># vypisuje každý příkaz před provedením</span>
+<span class="out">+ jmeno=Petr</span>
+<span class="out">+ echo 'Uživatel: Petr'</span>
+<span class="out">Uživatel: Petr</span>
+$ shellcheck skript.sh       <span class="cm"># najde typické chyby (sudo apt install shellcheck)</span></pre>
+    <p>Uvnitř skriptu lze ladění zapnout jen pro část kódu: <code>set -x</code> … <code>set +x</code>.</p>
+  </article>
+  <article class="card c6"><h2>Dobré zvyky</h2>
+    <ul>
+      <li>Vždy začínejte shebangem <code>#!/bin/bash</code>.</li>
+      <li>Proměnné dávejte do uvozovek: <code>"$soubor"</code>. Jinak se název s mezerou rozpadne na dva argumenty.</li>
+      <li>U důležitých skriptů použijte <code>set -euo pipefail</code>: skript skončí při první chybě nebo nenastavené proměnné.</li>
+      <li>Chyby vypisujte na stderr (<code>&gt;&amp;2</code>) a končete nenulovým <code>exit</code>.</li>
+      <li>Kontrolujte vstupy a vypište nápovědu, když chybí argumenty.</li>
+      <li>Pište komentáře a srozumitelné názvy proměnných.</li>
+    </ul>
+    <div class="callout"><b>Dál:</b> v kapitole 14 necháte skripty spouštět automaticky v naplánovaný čas pomocí cronu.</div>
+  </article>
+</div>
+</main>
+
+
+<div class="wrap"><nav class="pager" id="pager"></nav></div>
+<footer>Výuková prezentace · Úvod do operačních systémů · Unix-like OS · vizuální styl vychází z design systému VOŠ, SPŠ a SOŠ Varnsdorf.</footer>
+
+<script src="../js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Instalace a konfigurace · Unix-like operační systémy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-chapter="3">
+
+<div class="bar"><div class="bar-in">
+  <a class="brand" href="../index.html">Unix-like <span>OS</span></a>
+  <div class="bar-ch" id="barTitle">3 · Instalace a konfigurace</div>
+  <div class="bar-nav">
+    <a class="btn" id="barPrev" href="../index.html" aria-label="Předchozí kapitola">←</a>
+    <a class="btn" href="../index.html">Přehled</a>
+    <a class="btn" id="barNext" href="04-bash-a-souborovy-system.html" aria-label="Další kapitola">→</a>
+  </div>
+</div></div>
+
+<main class="wrap chapter">
+<header class="ch-head">
+  <div class="kicker">Kapitola 3 · Základy</div>
+  <h1>Instalace a konfigurace</h1>
+  <p class="lead">Linux lze vyzkoušet bez zásahu do počítače, provozovat vedle Windows, ve virtuálním stroji, nebo nasadit na server v cloudu. Způsob volíme podle účelu.</p>
+</header>
+<div class="grid">
+  <article class="card c12"><h2>Možnosti instalace</h2>
+    <div class="tbl"><table>
+      <tr><th>Způsob</th><th>Jak to funguje</th><th>Výhody</th><th>Nevýhody</th></tr>
+      <tr><td><b>Live USB</b></td><td>systém se spustí z flash disku bez instalace</td><td>vyzkoušení, záchrana dat, nic se nemění</td><td>pomalejší, změny se po restartu ztratí</td></tr>
+      <tr><td><b>Virtuální stroj</b></td><td>VirtualBox, VMware, Hyper-V, KVM/QEMU</td><td>bezpečné testování, snapshoty, ideální do výuky</td><td>dělí se o výkon s hostitelem</td></tr>
+      <tr><td><b>WSL 2</b></td><td>Linux uvnitř Windows (<code>wsl --install -d Debian</code>)</td><td>rychlý start, sdílené soubory s Windows</td><td>není plnohodnotný systém, chybí GUI a systemd jen volitelně</td></tr>
+      <tr><td><b>Dual boot</b></td><td>vedle Windows na stejném disku, výběr v zavaděči GRUB</td><td>plný výkon hardwaru</td><td>riziko při dělení disku, Secure Boot, BitLocker</td></tr>
+      <tr><td><b>Čistá instalace</b></td><td>Linux jako jediný systém (bare metal)</td><td>plný výkon, nejjednodušší správa</td><td>přijdeme o předchozí systém</td></tr>
+      <tr><td><b>Cloud / VPS</b></td><td>hotový obraz u poskytovatele, přístup přes SSH</td><td>během minut, veřejná IP</td><td>platí se provoz, bezpečnost je na nás</td></tr>
+      <tr><td><b>Kontejner</b></td><td><code>docker run -it debian:13 bash</code></td><td>okamžité, izolované prostředí aplikace</td><td>sdílí jádro hostitele, není to celý OS</td></tr>
+    </table></div>
+  </article>
+
+  <article class="card c6"><h2>Příprava instalačního média</h2>
+    <ol class="steps">
+      <li><span>Stáhnout obraz z <code>debian.org</code>: <b>netinst</b> (malý, balíčky stahuje ze sítě) nebo <b>DVD</b>.</span></li>
+      <li><span>Ověřit kontrolní součet, že soubor není poškozený ani podvržený.</span></li>
+      <li><span>Zapsat obraz na USB: Rufus nebo balenaEtcher (Windows), <code>dd</code> (Linux).</span></li>
+      <li><span>V UEFI/BIOS nastavit start z USB (často <span class="kbd">F12</span>, <span class="kbd">F2</span> nebo <span class="kbd">Esc</span>).</span></li>
+    </ol>
+<pre>$ sha256sum debian-13.1.0-amd64-netinst.iso
+<span class="out">a1b2c3…  debian-13.1.0-amd64-netinst.iso</span>
+# porovnat se souborem SHA256SUMS na webu
+
+$ sudo dd if=debian-13.1.0-amd64-netinst.iso of=/dev/sdX bs=4M status=progress oflag=sync
+# /dev/sdX = celý flash disk (ověřit přes lsblk!)</pre>
+  </article>
+  <article class="card c6"><h2>Průběh instalace Debianu</h2>
+    <ol class="steps">
+      <li><span>Jazyk, oblast a rozložení klávesnice.</span></li>
+      <li><span>Síť: název počítače (hostname) a doména.</span></li>
+      <li><span>Heslo roota. <b>Když ho necháte prázdné</b>, root se zamkne a první uživatel dostane <code>sudo</code>.</span></li>
+      <li><span>Běžný uživatel: celé jméno, login, heslo.</span></li>
+      <li><span>Rozdělení disku: řízené (celý disk), s LVM, šifrované LVM, nebo ručně.</span></li>
+      <li><span>Zrcadlo archivu balíčků (deb.debian.org).</span></li>
+      <li><span>Výběr softwaru (tasksel): prostředí GUI, SSH server, standardní nástroje.</span></li>
+      <li><span>Instalace zavaděče GRUB a restart.</span></li>
+    </ol>
+  </article>
+
+  <article class="card c5"><h2>Typické rozdělení disku (UEFI)</h2>
+    <div class="tbl"><table>
+      <tr><th>Oddíl</th><th>Velikost</th><th>Souborový systém</th></tr>
+      <tr><td><code>/boot/efi</code></td><td>512 MB – 1 GB</td><td>FAT32 (ESP)</td></tr>
+      <tr><td><code>/</code></td><td>25 GB a víc</td><td>ext4 / btrfs</td></tr>
+      <tr><td><code>/home</code></td><td>zbytek disku</td><td>ext4</td></tr>
+      <tr><td>swap</td><td>podle RAM, 2–8 GB</td><td>swap</td></tr>
+    </table></div>
+    <p class="muted">Samostatný <code>/home</code> umožní přeinstalovat systém bez ztráty uživatelských dat.</p>
+  </article>
+  <article class="card c7"><h2>První konfigurace po instalaci</h2>
+<pre># aktualizace systému
+$ sudo apt update &amp;&amp; sudo apt full-upgrade
+
+# název počítače, čas, jazyk
+$ hostnamectl
+$ sudo hostnamectl set-hostname lab-pc01
+$ sudo timedatectl set-timezone Europe/Prague
+$ localectl status
+
+# síť
+$ ip a                      <span class="cm"># adresy rozhraní</span>
+$ ip r                      <span class="cm"># výchozí brána</span>
+$ nmcli device status       <span class="cm"># s NetworkManagerem (desktop)</span>
+
+# vzdálený přístup a firewall
+$ sudo apt install openssh-server ufw
+$ sudo systemctl enable --now ssh
+$ sudo ufw allow OpenSSH &amp;&amp; sudo ufw enable</pre>
+  </article>
+  <article class="card c12"><h2>Kde je konfigurace</h2>
+    <div class="tbl"><table>
+      <tr><th>Soubor</th><th>Co nastavuje</th></tr>
+      <tr><td><code>/etc/hostname</code>, <code>/etc/hosts</code></td><td>jméno počítače a lokální překlad jmen</td></tr>
+      <tr><td><code>/etc/network/interfaces</code></td><td>síť na serveru bez NetworkManageru (Debian ifupdown)</td></tr>
+      <tr><td><code>/etc/fstab</code></td><td>které oddíly se připojí při startu a kam</td></tr>
+      <tr><td><code>/etc/apt/sources.list.d/debian.sources</code></td><td>repozitáře balíčků (kapitola 12)</td></tr>
+      <tr><td><code>/etc/default/grub</code></td><td>nastavení zavaděče, poté <code>sudo update-grub</code></td></tr>
+      <tr><td><code>/etc/ssh/sshd_config</code></td><td>nastavení SSH serveru</td></tr>
+    </table></div>
+    <div class="callout">Konfigurace v Linuxu je převážně v textových souborech v <code>/etc</code>. K jejich úpravě potřebujeme editor (kapitola 5) a práva správce (kapitola 9).</div>
+  </article>
+</div>
+</main>
+
+
+<div class="wrap"><nav class="pager" id="pager"></nav></div>
+<footer>Výuková prezentace · Úvod do operačních systémů · Unix-like OS · vizuální styl vychází z design systému VOŠ, SPŠ a SOŠ Varnsdorf.</footer>
+
+<script src="../js/app.js"></script>
+</body>
+</html>

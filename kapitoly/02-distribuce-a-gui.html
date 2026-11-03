@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Distribuce, jejich užití a GUI · Unix-like operační systémy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-chapter="2">
+
+<div class="bar"><div class="bar-in">
+  <a class="brand" href="../index.html">Unix-like <span>OS</span></a>
+  <div class="bar-ch" id="barTitle">2 · Distribuce, jejich užití a GUI</div>
+  <div class="bar-nav">
+    <a class="btn" id="barPrev" href="../index.html" aria-label="Předchozí kapitola">←</a>
+    <a class="btn" href="../index.html">Přehled</a>
+    <a class="btn" id="barNext" href="03-instalace-a-konfigurace.html" aria-label="Další kapitola">→</a>
+  </div>
+</div></div>
+
+<main class="wrap chapter">
+<header class="ch-head">
+  <div class="kicker">Kapitola 2 · Základy</div>
+  <h1>Distribuce, jejich užití a GUI</h1>
+  <p class="lead">Všechny linuxové distribuce sdílí stejné jádro. Liší se tím, co kolem něj poskládají: správcem balíčků, rytmem vydávání, výchozím nastavením a cílovým nasazením.</p>
+</header>
+<div class="grid">
+  <article class="card c7"><h2>Podle rodiny (původu)</h2>
+    <p>Většina distribucí vychází z několika základních. Rodina určuje formát balíčků, správce balíčků a umístění konfigurace.</p>
+    <div class="tbl"><table>
+      <tr><th>Rodina</th><th>Zástupci</th><th>Balíčky</th></tr>
+      <tr><td><b>Debian</b></td><td>Debian, Ubuntu, Linux Mint, Raspberry Pi OS, Kali Linux</td><td><code>apt</code> / <code>.deb</code></td></tr>
+      <tr><td><b>Red Hat</b></td><td>RHEL, Fedora, Rocky Linux, AlmaLinux, CentOS Stream</td><td><code>dnf</code> / <code>.rpm</code></td></tr>
+      <tr><td><b>SUSE</b></td><td>SLES, openSUSE Leap, openSUSE Tumbleweed</td><td><code>zypper</code> / <code>.rpm</code></td></tr>
+      <tr><td><b>Arch</b></td><td>Arch Linux, Manjaro, EndeavourOS</td><td><code>pacman</code></td></tr>
+      <tr><td><b>Nezávislé</b></td><td>Alpine, Gentoo, Slackware, NixOS, Void</td><td><code>apk</code>, <code>emerge</code>, <code>nix</code>…</td></tr>
+    </table></div>
+  </article>
+  <article class="card c5"><h2>Podle modelu vydávání</h2>
+    <h3>Pevná vydání (point release)</h3>
+    <p>Nová verze jednou za čas, mezi verzemi jen opravy. Předvídatelné, vhodné pro servery. <span class="tag">Debian</span><span class="tag">RHEL</span><span class="tag">Ubuntu LTS</span></p>
+    <h3>Průběžná vydání (rolling)</h3>
+    <p>Balíčky se aktualizují průběžně, žádné „velké“ upgrady. Nejnovější software, vyšší riziko nečekané změny. <span class="tag">Arch</span><span class="tag">Tumbleweed</span><span class="tag">Debian testing</span></p>
+    <h3>LTS</h3>
+    <p>Ubuntu LTS má 5 let standardní podpory (s placeným rozšířením víc), Debian stable zhruba 3 roky + 2 roky LTS komunity.</p>
+  </article>
+
+  <article class="card c12"><h2>Podle účelu nasazení</h2>
+    <div class="tbl"><table>
+      <tr><th>Účel</th><th>Typické distribuce</th><th>Proč</th></tr>
+      <tr><td>Server, firma</td><td>Debian, Ubuntu Server, RHEL, Rocky, AlmaLinux, SLES</td><td>dlouhá podpora, stabilita, certifikace, placená podpora u RHEL/SLES</td></tr>
+      <tr><td>Desktop pro začátečníky</td><td>Ubuntu, Linux Mint, Fedora Workstation, Zorin OS</td><td>grafický instalátor, ovladače, „funguje hned“</td></tr>
+      <tr><td>Vývoj a nejnovější software</td><td>Fedora, Arch, openSUSE Tumbleweed</td><td>čerstvé verze jazyků, knihoven a jádra</td></tr>
+      <tr><td>Kontejnery a cloud</td><td>Alpine, Debian slim, Ubuntu Minimal, Fedora CoreOS</td><td>malý obraz (Alpine okolo 5 MB), méně útočných ploch</td></tr>
+      <tr><td>Bezpečnost a penetrační testy</td><td>Kali Linux, Parrot OS, Tails</td><td>předinstalované nástroje, anonymita</td></tr>
+      <tr><td>Jednodeskové počítače, IoT</td><td>Raspberry Pi OS, Armbian, Ubuntu Core</td><td>podpora ARM, nízké nároky</td></tr>
+      <tr><td>Síťová zařízení, routery</td><td>OpenWrt, pfSense/OPNsense (FreeBSD)</td><td>minimální systém, webová správa</td></tr>
+      <tr><td>Výuka a hlubší pochopení</td><td>Arch, Gentoo, Linux From Scratch</td><td>systém se skládá ručně, krok za krokem</td></tr>
+    </table></div>
+  </article>
+
+  <article class="card c4"><h2>Další kritéria</h2>
+    <h3>Init systém</h3><p>Většina používá <code>systemd</code>. Bez něj: Devuan, Alpine (OpenRC), Void (runit).</p>
+    <h3>Komerční × komunitní</h3><p>RHEL a SLES se platí za podporu. Rocky a AlmaLinux jsou bezplatné, binárně kompatibilní s RHEL.</p>
+    <h3>Velikost a nároky</h3><p>Plný desktop potřebuje 2–4 GB RAM. Odlehčené (Lubuntu, antiX) běží i na starém hardwaru.</p>
+  </article>
+  <article class="card c8"><h2>Grafické rozhraní (GUI)</h2>
+    <p>GUI není součástí jádra. Je to vrstvený software, který lze nainstalovat, vyměnit, nebo vůbec nemít (typický server).</p>
+    <div class="arch">
+      <div class="layer"><b>DESKTOPOVÉ PROSTŘEDÍ / SPRÁVCE OKEN</b><span>GNOME · KDE Plasma · Xfce · Cinnamon · MATE · LXQt  |  i3 · Sway</span></div>
+      <div class="layer"><b>DISPLAY MANAGER (přihlašovací obrazovka)</b><span>GDM · SDDM · LightDM</span></div>
+      <div class="layer"><b>ZOBRAZOVACÍ SERVER / PROTOKOL</b><span>Wayland (moderní, výchozí v GNOME a KDE) · X11 / Xorg (starší, stále rozšířený)</span></div>
+      <div class="layer"><b>GRAFICKÝ OVLADAČ V JÁDŘE</b><span>DRM/KMS · Mesa · ovladač NVIDIA</span></div>
+    </div>
+  </article>
+  <article class="card c12"><h2>Desktopová prostředí v kostce</h2>
+    <div class="tbl"><table>
+      <tr><th>Prostředí</th><th>Charakter</th><th>Nároky</th><th>Výchozí v</th></tr>
+      <tr><td><b>GNOME</b></td><td>moderní, minimalistické, ovládání přes „Aktivity“</td><td>vyšší</td><td>Debian, Ubuntu, Fedora</td></tr>
+      <tr><td><b>KDE Plasma</b></td><td>vzhledem blízké Windows, velmi nastavitelné</td><td>střední</td><td>Kubuntu, openSUSE, Fedora KDE</td></tr>
+      <tr><td><b>Cinnamon</b></td><td>klasická nabídka Start a panel</td><td>střední</td><td>Linux Mint</td></tr>
+      <tr><td><b>Xfce</b></td><td>lehké, stabilní, konzervativní</td><td>nízké</td><td>Xubuntu, Kali</td></tr>
+      <tr><td><b>LXQt</b></td><td>velmi lehké</td><td>velmi nízké</td><td>Lubuntu</td></tr>
+      <tr><td><b>i3 / Sway</b></td><td>dlaždicový správce oken, ovládání klávesnicí</td><td>minimální</td><td>volba pokročilých</td></tr>
+    </table></div>
+    <div class="callout"><b>Debian při instalaci</b> nabízí výběr GNOME, KDE Plasma, Xfce, Cinnamon, MATE, LXDE, LXQt nebo žádné GUI. Pro server se GUI neinstaluje a správa probíhá přes SSH.</div>
+  </article>
+</div>
+</main>
+
+
+<div class="wrap"><nav class="pager" id="pager"></nav></div>
+<footer>Výuková prezentace · Úvod do operačních systémů · Unix-like OS · vizuální styl vychází z design systému VOŠ, SPŠ a SOŠ Varnsdorf.</footer>
+
+<script src="../js/app.js"></script>
+</body>
+</html>

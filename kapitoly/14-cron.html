@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Plánování úloh: cron · Unix-like operační systémy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-chapter="14">
+
+<div class="bar"><div class="bar-in">
+  <a class="brand" href="../index.html">Unix-like <span>OS</span></a>
+  <div class="bar-ch" id="barTitle">14 · Plánování úloh: cron</div>
+  <div class="bar-nav">
+    <a class="btn" id="barPrev" href="../index.html" aria-label="Předchozí kapitola">←</a>
+    <a class="btn" href="../index.html">Přehled</a>
+    <a class="btn" id="barNext" href="../index.html" aria-label="Další kapitola">→</a>
+  </div>
+</div></div>
+
+<main class="wrap chapter">
+<header class="ch-head">
+  <div class="kicker">Kapitola 14 · Skriptování</div>
+  <h1>Plánování úloh: cron</h1>
+  <p class="lead">Záloha každou noc, úklid jednou týdně, kontrola disku každých pět minut. Cron je služba, která spouští příkazy a skripty v zadaný čas, i když u počítače nikdo nesedí. V kapitole si ukážeme, jak úlohu vytvořit, spravovat a zase odstranit.</p>
+</header>
+<div class="grid">
+  <article class="card c5"><h2>Jak cron funguje</h2>
+    <p>Démon <code>cron</code> běží na pozadí a každou minutu projde tabulky úloh, kterým se říká <b>crontab</b>. Když čas úlohy odpovídá aktuální minutě, spustí ji pod daným uživatelem.</p>
+    <div class="flow"><span>crontab</span><i>→</i><span>cron (každou minutu)</span><i>→</i><span>příkaz</span></div>
+    <div class="tbl"><table>
+      <tr><th>Kde jsou úlohy</th><th>Kdo je spravuje</th></tr>
+      <tr><td><code>crontab -e</code><br><span class="muted">uloženo v /var/spool/cron/crontabs/</span></td><td>každý uživatel své vlastní</td></tr>
+      <tr><td><code>/etc/crontab</code>, <code>/etc/cron.d/</code></td><td>správce systému a balíčky</td></tr>
+      <tr><td><code>/etc/cron.daily/</code> …</td><td>skripty spouštěné hodinově, denně, týdně, měsíčně</td></tr>
+    </table></div>
+<pre>$ systemctl status cron          <span class="cm"># běží služba?</span>
+$ sudo apt install cron          <span class="cm"># pokud chybí</span></pre>
+  </article>
+
+  <article class="card c7"><h2>Syntaxe řádku crontabu</h2>
+    <div class="cronf">
+      <div><b>30</b><span>minuta<br>0–59</span></div>
+      <div><b>2</b><span>hodina<br>0–23</span></div>
+      <div><b>*</b><span>den v měsíci<br>1–31</span></div>
+      <div><b>*</b><span>měsíc<br>1–12, jan–dec</span></div>
+      <div><b>1-5</b><span>den v týdnu<br>0–7, mon–sun</span></div>
+      <div class="cmd"><b>/home/petr/bin/zaloha.sh</b><span>příkaz</span></div>
+    </div>
+    <p>Pět časových polí oddělených mezerou, pak příkaz. Tento řádek spustí zálohu ve <b>2:30 v pracovní dny</b>. Neděle je 0 i 7.</p>
+    <div class="tbl"><table>
+      <tr><th>Znak</th><th>Význam</th><th>Příklad</th></tr>
+      <tr><td><code>*</code></td><td>každá hodnota</td><td><code>*</code> v hodinách = každou hodinu</td></tr>
+      <tr><td><code>,</code></td><td>výčet</td><td><code>0,30</code> = v 0. a 30. minutě</td></tr>
+      <tr><td><code>-</code></td><td>rozsah</td><td><code>8-16</code> = od 8 do 16 hodin</td></tr>
+      <tr><td><code>/</code></td><td>krok</td><td><code>*/15</code> = každých 15 minut</td></tr>
+    </table></div>
+  </article>
+
+  <article class="card c12"><h2>Příklady časů</h2>
+    <div class="split"><div class="tbl"><table>
+      <tr><th>Zápis</th><th>Kdy se úloha spustí</th></tr>
+      <tr><td><code style="white-space:nowrap">* * * * *</code></td><td>každou minutu</td></tr>
+      <tr><td><code style="white-space:nowrap">*/5 * * * *</code></td><td>každých 5 minut</td></tr>
+      <tr><td><code style="white-space:nowrap">0 * * * *</code></td><td>každou celou hodinu</td></tr>
+      <tr><td><code style="white-space:nowrap">30 2 * * *</code></td><td>každý den ve 2:30</td></tr>
+      <tr><td><code style="white-space:nowrap">0 12,18 * * *</code></td><td>každý den ve 12:00 a v 18:00</td></tr>
+      <tr><td><code style="white-space:nowrap">@reboot</code></td><td>jednou po startu systému</td></tr>
+      <tr><td><code style="white-space:nowrap">@weekly</code></td><td>v neděli o půlnoci</td></tr>
+    </table></div><div class="tbl"><table>
+      <tr><th>Zápis</th><th>Kdy se úloha spustí</th></tr>
+      <tr><td><code style="white-space:nowrap">0 0 1 * *</code></td><td>o půlnoci prvního dne v měsíci</td></tr>
+      <tr><td><code style="white-space:nowrap">0 8 * * 1</code></td><td>každé pondělí v 8:00</td></tr>
+      <tr><td><code style="white-space:nowrap">0 7 * * 1-5</code></td><td>v pracovní dny v 7:00</td></tr>
+      <tr><td><code style="white-space:nowrap">0 8-16 * * mon-fri</code></td><td>každou celou hodinu od 8 do 16 v pracovní dny</td></tr>
+      <tr><td><code style="white-space:nowrap">15 6 1 1,7 *</code></td><td>1. ledna a 1. července v 6:15</td></tr>
+      <tr><td><code style="white-space:nowrap">@daily</code></td><td>jednou denně o půlnoci (<code>@hourly</code>: jednou za hodinu)</td></tr>
+      <tr><td><code style="white-space:nowrap">@monthly</code></td><td>1. den v měsíci o půlnoci (<code>@yearly</code>: 1. ledna)</td></tr>
+    </table></div></div>
+    <div class="callout">Když omezíte <b>den v měsíci i den v týdnu</b> zároveň, platí <b>nebo</b>: <code>0 9 13 * 5</code> se spustí každého 13. <i>a také</i> každý pátek. Výraz si můžete ověřit na <a href="https://crontab.guru" style="color:var(--cyan)">crontab.guru</a>.</div>
+  </article>
+
+  <div class="part-h sec"><h2>Vytvoření</h2><span>crontab -e a první úloha</span></div>
+  <article class="card c7"><h2>Vytvoření úlohy: <code>crontab -e</code></h2>
+    <ol class="steps">
+      <li><span>Spusťte <code>crontab -e</code>. Napoprvé se Debian zeptá, jaký editor chcete používat; nejjednodušší je <code>nano</code>. Volbu změníte později příkazem <code>select-editor</code>.</span></li>
+      <li><span>Na konec souboru napište řádek s úlohou. Řádky s <code>#</code> jsou komentáře.</span></li>
+      <li><span>Uložte a zavřete editor. Crontab se při uložení zkontroluje a zapne, cron ho není třeba restartovat.</span></li>
+    </ol>
+<pre class="run">$ crontab -l
+<span class="out">no crontab for petr</span>
+$ crontab -e
+<span class="out">no crontab for petr - using an empty one</span>
+<span class="out">crontab: installing new crontab</span>
+$ crontab -l
+<span class="out"># m h  dom mon dow   command</span>
+<span class="out">*/5 * * * * date &gt;&gt; /home/petr/cas.log</span></pre>
+    <p class="muted">Po pár minutách přibydou v <code>~/cas.log</code> řádky s časem. To je nejrychlejší test, že cron funguje.</p>
+  </article>
+  <article class="card c5"><h2>Chyba v zápisu</h2>
+    <p>Crontab s chybou se neuloží. Editor se zeptá, zda ho chcete otevřít znovu a opravit.</p>
+<pre class="run">$ crontab -e
+<span class="out">"/tmp/crontab.Xb3kQ/crontab":24: bad minute</span>
+<span class="out">errors in crontab file, can't install.</span>
+<span class="out">Do you want to retry the same edit? (y/n)</span></pre>
+    <h3>Na co si dát pozor</h3>
+    <ul>
+      <li>Poslední řádek musí končit <b>Enterem</b>, jinak se úloha nenačte.</li>
+      <li>Znak <code>%</code> má v crontabu zvláštní význam (nový řádek). V příkazu ho pište jako <code>\%</code>: <code>date +\%F</code>.</li>
+      <li>Crontab needitujte přímo ve <code>/var/spool/cron/</code>, vždy přes <code>crontab -e</code>.</li>
+    </ul>
+  </article>
+
+  <article class="card c6"><h2>Prostředí, ve kterém úloha běží</h2>
+    <p>Cron nespouští váš terminál. Nenačte <code>~/.bashrc</code>, <code>PATH</code> obsahuje jen <code>/usr/bin:/bin</code> a výchozí shell je <code>/bin/sh</code>. Úloha, která v terminálu funguje, proto v cronu často selže.</p>
+<pre class="script" data-file="crontab -e"># proměnné platí pro všechny úlohy pod nimi
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin:/home/petr/bin
+MAILTO=""
+
+<span class="cm"># vždy plné cesty ke skriptům i souborům</span>
+0 3 * * * /home/petr/bin/zaloha.sh /home/petr/projekt</pre>
+  </article>
+  <article class="card c6"><h2>Kam jde výstup</h2>
+    <p>Co úloha vypíše, pošle cron e-mailem vlastníkovi (proměnná <code>MAILTO</code>). Na většině počítačů ale poštovní server není nainstalovaný a výstup se tiše zahodí. Lepší je výstup i chyby přesměrovat do logu (kapitola 6).</p>
+<pre class="script" data-file="crontab -e">*/5 * * * * /home/petr/bin/kontrola.sh &gt;&gt; /home/petr/kontrola.log 2&gt;&amp;1
+0 4 * * *   /home/petr/bin/uklid.sh &gt; /dev/null 2&gt;&amp;1   <span class="cm"># výstup zahodit</span></pre>
+    <p class="muted">Bez přesměrování najdete v záznamech hlášku <code>No MTA installed, discarding output</code>.</p>
+  </article>
+
+  <div class="part-h sec"><h2>Správa</h2><span>výpis, úpravy, záloha a úlohy jiných uživatelů</span></div>
+  <article class="card c7"><h2>Příkaz <code>crontab</code></h2>
+    <div class="syntax"><b>crontab</b> <i>[-u uživatel]</i> <em>-l | -e | -r | soubor</em></div>
+    <div class="tbl"><table>
+      <tr><th>Příkaz</th><th>Co dělá</th></tr>
+      <tr><td><code>crontab -l</code></td><td>vypíše moje úlohy</td></tr>
+      <tr><td><code>crontab -e</code></td><td>otevře moje úlohy v editoru</td></tr>
+      <tr><td><code>crontab soubor.txt</code></td><td>nahradí celý crontab obsahem souboru</td></tr>
+      <tr><td><code>crontab -r</code></td><td>smaže <b>celý</b> crontab bez dotazu</td></tr>
+      <tr><td><code>crontab -i -r</code></td><td>totéž, ale se zeptá</td></tr>
+      <tr><td><code>sudo crontab -u petr -l</code></td><td>správce vypíše (nebo <code>-e</code> upraví) úlohy jiného uživatele</td></tr>
+      <tr><td><code>sudo ls /var/spool/cron/crontabs</code></td><td>kteří uživatelé mají crontab</td></tr>
+    </table></div>
+  </article>
+  <article class="card c5"><h2>Záloha a úpravy bez editoru</h2>
+    <p>Crontab je obyčejný text, takže s ním fungují roury. Hodí se to ve skriptech nebo při zakládání úloh na více počítačích.</p>
+<pre>$ crontab -l &gt; cron-zaloha.txt        <span class="cm"># záloha</span>
+$ crontab cron-zaloha.txt             <span class="cm"># obnova</span>
+
+<span class="cm"># přidat úlohu na konec</span>
+$ (crontab -l 2&gt;/dev/null; echo "0 7 * * 1-5 /home/petr/bin/ranni.sh") | crontab -</pre>
+    <p class="muted"><code>crontab -</code> čte nový obsah ze stdin. <code>2&gt;/dev/null</code> skryje hlášku <i>no crontab</i>, pokud žádné úlohy ještě nejsou.</p>
+  </article>
+
+  <article class="card c7"><h2>Systémové úlohy</h2>
+    <p><code>/etc/crontab</code> a soubory v <code>/etc/cron.d/</code> mají mezi časem a příkazem <b>navíc pole s uživatelem</b>. Upravují se přímo editorem (jako root) a cron je načte sám.</p>
+<pre class="script" data-file="/etc/crontab (výňatek)">SHELL=/bin/sh
+<span class="cm"># m h dom mon dow user  command</span>
+17 *  * * *   root  cd / &amp;&amp; run-parts --report /etc/cron.hourly
+25 6  * * *   root  test -x /usr/sbin/anacron || { cd / &amp;&amp; run-parts --report /etc/cron.daily; }
+47 6  * * 7   root  test -x /usr/sbin/anacron || { cd / &amp;&amp; run-parts --report /etc/cron.weekly; }
+52 6  1 * *   root  test -x /usr/sbin/anacron || { cd / &amp;&amp; run-parts --report /etc/cron.monthly; }</pre>
+<pre>$ sudo nano /etc/cron.d/zaloha-webu
+<span class="out">30 1 * * *  www-data  /usr/local/bin/zaloha-webu.sh &gt;&gt; /var/log/zaloha-webu.log 2&gt;&amp;1</span></pre>
+    <p class="muted">Pokud je nainstalovaný <code>anacron</code> (běžné na desktopu), postará se o denní, týdenní a měsíční úlohy i na počítači, který v danou chvíli nebyl zapnutý.</p>
+  </article>
+  <article class="card c5"><h2>Adresáře cron.daily a spol.</h2>
+    <p>Nejjednodušší cesta pro správce: spustitelný skript stačí nakopírovat do adresáře, čas neřešíte.</p>
+    <div class="tbl"><table>
+      <tr><td><code>/etc/cron.hourly/</code></td><td>každou hodinu</td></tr>
+      <tr><td><code>/etc/cron.daily/</code></td><td>jednou denně</td></tr>
+      <tr><td><code>/etc/cron.weekly/</code></td><td>jednou týdně</td></tr>
+      <tr><td><code>/etc/cron.monthly/</code></td><td>jednou měsíčně</td></tr>
+    </table></div>
+<pre>$ sudo cp uklid.sh /etc/cron.daily/uklid      <span class="cm"># bez přípony!</span>
+$ sudo chmod +x /etc/cron.daily/uklid
+$ run-parts --test /etc/cron.daily            <span class="cm"># co se spustí</span></pre>
+    <div class="callout warn"><code>run-parts</code> přeskočí soubory, jejichž název obsahuje tečku. Skript <code>uklid.sh</code> by se proto nikdy nespustil.</div>
+  </article>
+
+  <article class="card c6"><h2>Kontrola, zda úloha proběhla</h2>
+    <p>Debian 13 zapisuje záznamy do systemd journalu. Každé spuštění úlohy je v něm vidět jako řádek <code>CMD</code>.</p>
+<pre>$ journalctl -u cron --since today
+<span class="out">lis 03 10:05:01 debian CRON[2841]: (petr) CMD (date &gt;&gt; /home/petr/cas.log)</span>
+<span class="out">lis 03 10:10:01 debian CRON[2907]: (petr) CMD (date &gt;&gt; /home/petr/cas.log)</span>
+$ journalctl -u cron -f                <span class="cm"># sledovat živě</span>
+$ grep CRON /var/log/syslog            <span class="cm"># na systémech s rsyslogem</span></pre>
+    <p class="muted">Ani řádek <code>CMD</code> neznamená, že úloha uspěla. Výsledek ukáže až váš log z přesměrování.</p>
+  </article>
+  <article class="card c6"><h2>Kdo smí cron používat</h2>
+    <div class="tbl"><table>
+      <tr><th>Soubor</th><th>Význam</th></tr>
+      <tr><td><code>/etc/cron.allow</code></td><td>pokud existuje, smějí cron používat <b>jen</b> uživatelé v něm uvedení</td></tr>
+      <tr><td><code>/etc/cron.deny</code></td><td>uvedení uživatelé cron používat nesmějí</td></tr>
+      <tr><td>žádný z nich</td><td>v Debianu smějí všichni</td></tr>
+    </table></div>
+<pre>$ echo "jan" | sudo tee -a /etc/cron.deny
+$ crontab -e                           <span class="cm"># jako jan</span>
+<span class="out">You (jan) are not allowed to use this program (crontab)</span></pre>
+  </article>
+
+  <div class="part-h sec"><h2>Odstranění</h2><span>jedna úloha, celý crontab, systémové úlohy</span></div>
+  <article class="card c6"><h2>Odstranění jedné úlohy</h2>
+    <p>Nejbezpečnější je otevřít crontab a řádek smazat nebo ho jen zakomentovat znakem <code>#</code>. Zakomentovanou úlohu později snadno znovu zapnete.</p>
+<pre class="script" data-file="crontab -e"><span class="cm"># */5 * * * * date &gt;&gt; /home/petr/cas.log      ← vypnuto</span>
+0 3 * * * /home/petr/bin/zaloha.sh /home/petr/projekt</pre>
+    <p>Bez editoru, například ve skriptu, vyfiltrujte řádek <code>grep -v</code> a výsledek nahrajte zpět:</p>
+<pre>$ crontab -l | grep -v 'cas.log' | crontab -
+$ crontab -l</pre>
+  </article>
+  <article class="card c6"><h2>Odstranění celého crontabu</h2>
+<pre class="run">$ crontab -l &gt; cron-zaloha.txt       <span class="cm"># nejdřív záloha</span>
+$ crontab -i -r
+<span class="out">crontab: really delete petr's crontab? (y/n) y</span>
+$ crontab -l
+<span class="out">no crontab for petr</span>
+$ sudo crontab -u jan -r       <span class="cm"># crontab uživatele jan</span></pre>
+    <div class="callout warn"><b>Pozor:</b> <code>-r</code> leží na klávesnici hned vedle <code>-e</code>. Překlep <code>crontab -r</code> smaže všechny úlohy bez ptaní. Proto se hodí záloha a alias <code>alias crontab='crontab -i'</code> v <code>~/.bashrc</code>.</div>
+    <h3>Systémové úlohy</h3>
+    <p>Smaže se soubor: <code>sudo rm /etc/cron.d/zaloha-webu</code> nebo <code>sudo rm /etc/cron.daily/uklid</code>. Řádek v <code>/etc/crontab</code> odstraníte editorem.</p>
+  </article>
+
+  <div class="part-h sec"><h2>Celý postup v praxi</h2><span>skript → naplánování → kontrola → odstranění</span></div>
+  <article class="card c12"><h2>Úklid dočasných souborů každou noc</h2>
+    <div class="split">
+<pre class="script" data-file="~/bin/uklid.sh">#!/bin/bash
+<span class="cm"># Smaže z ~/docasne soubory starší než 7 dní a zapíše, co udělal</span>
+adr="$HOME/docasne"
+smazano=$(find "$adr" -type f -mtime +7 -print -delete | wc -l)
+echo "$(date '+%F %T') smazáno souborů: $smazano"</pre>
+<pre class="run"><span class="cm"># 1) skript vyzkoušet ručně</span>
+$ chmod +x ~/bin/uklid.sh
+$ ~/bin/uklid.sh
+<span class="out">2026-11-03 10:12:40 smazáno souborů: 2</span>
+
+<span class="cm"># 2) naplánovat na 3:15 každou noc</span>
+$ crontab -e                <span class="cm"># v editoru přidat řádek:</span>
+  15 3 * * * /home/petr/bin/uklid.sh &gt;&gt; /home/petr/uklid.log 2&gt;&amp;1
+<span class="out">crontab: installing new crontab</span>
+
+<span class="cm"># 3) druhý den ráno zkontrolovat</span>
+$ cat ~/uklid.log
+<span class="out">2026-11-04 03:15:01 smazáno souborů: 5</span>
+
+<span class="cm"># 4) úlohu už nepotřebuji</span>
+$ crontab -l | grep -v 'uklid.sh' | crontab -</pre>
+    </div>
+    <p class="muted">Datum v <code>date '+%F %T'</code> je uvnitř skriptu, ne přímo v crontabu, takže znak <code>%</code> není potřeba escapovat. Složitější příkazy proto patří do skriptu a v crontabu je jen jeho volání.</p>
+  </article>
+
+  <article class="card c6"><h2>Související nástroje</h2>
+    <div class="tbl"><table>
+      <tr><td><code>at</code></td><td>jednorázové spuštění: <code>echo "/home/petr/bin/zaloha.sh" | at 22:00</code>, výpis <code>atq</code>, zrušení <code>atrm</code></td></tr>
+      <tr><td><code>anacron</code></td><td>denní a týdenní úlohy dožene, i když byl počítač v danou dobu vypnutý</td></tr>
+      <tr><td>systemd timery</td><td>moderní náhrada cronu: <code>systemctl list-timers</code> ukáže, co systém plánuje</td></tr>
+    </table></div>
+  </article>
+  <article class="card c6"><h2>Zapamatuj si</h2>
+    <ul>
+      <li>Pořadí polí: <b>minuta, hodina, den, měsíc, den v týdnu</b>.</li>
+      <li>Úlohy upravujte přes <code>crontab -e</code>, vypisujte <code>crontab -l</code>.</li>
+      <li>V cronu vždy používejte plné cesty a výstup přesměrujte do logu.</li>
+      <li>Než úlohu naplánujete, vyzkoušejte skript ručně.</li>
+      <li>Před <code>crontab -r</code> si udělejte zálohu přes <code>crontab -l &gt; soubor</code>.</li>
+    </ul>
+    <div class="callout ok"><b>Shrnutí kurzu:</b> nainstalovat distribuci (kap. 3), najít se v souborech (4), upravit konfiguraci (5), zpracovat výstupy (6–7), hlídat procesy (8), jako správce (9) spravovat uživatele (10), práva (11) a software (12), opakovanou práci svěřit skriptům (13) a spouštět je automaticky cronem (14).</div>
+  </article>
+</div>
+</main>
+
+
+<div class="wrap"><nav class="pager" id="pager"></nav></div>
+<footer>Výuková prezentace · Úvod do operačních systémů · Unix-like OS · vizuální styl vychází z design systému VOŠ, SPŠ a SOŠ Varnsdorf.</footer>
+
+<script src="../js/app.js"></script>
+</body>
+</html>

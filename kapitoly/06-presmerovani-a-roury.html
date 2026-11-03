@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Přesměrování a roury · Unix-like operační systémy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-chapter="6">
+
+<div class="bar"><div class="bar-in">
+  <a class="brand" href="../index.html">Unix-like <span>OS</span></a>
+  <div class="bar-ch" id="barTitle">6 · Přesměrování a roury</div>
+  <div class="bar-nav">
+    <a class="btn" id="barPrev" href="../index.html" aria-label="Předchozí kapitola">←</a>
+    <a class="btn" href="../index.html">Přehled</a>
+    <a class="btn" id="barNext" href="07-regularni-vyrazy.html" aria-label="Další kapitola">→</a>
+  </div>
+</div></div>
+
+<main class="wrap chapter">
+<header class="ch-head">
+  <div class="kicker">Kapitola 6 · bash</div>
+  <h1>Přesměrování a roury</h1>
+  <p class="lead">Unixová filozofie: každý program dělá jednu věc dobře a umí spolupracovat s ostatními. Spojením malých nástrojů rourou vzniká nástroj nový.</p>
+</header>
+<div class="grid">
+  <article class="card c5"><h2>Tři standardní proudy</h2>
+    <div class="tbl"><table>
+      <tr><th>Číslo</th><th>Název</th><th>Výchozí</th></tr>
+      <tr><td class="perms">0</td><td><b>stdin</b> — vstup</td><td>klávesnice</td></tr>
+      <tr><td class="perms">1</td><td><b>stdout</b> — výstup</td><td>terminál</td></tr>
+      <tr><td class="perms">2</td><td><b>stderr</b> — chyby</td><td>terminál</td></tr>
+    </table></div>
+    <div class="flow"><span>stdin 0</span><i>→</i><span>příkaz</span><i>→</i><span>stdout 1</span></div>
+    <div class="flow"><span style="visibility:hidden">stdin 0</span><i style="visibility:hidden">→</i><span style="visibility:hidden">příkaz</span><i>↘</i><span>stderr 2</span></div>
+    <p class="muted">Výstup a chyby jdou na obrazovku zvlášť, a proto je lze přesměrovat každý jinam.</p>
+  </article>
+  <article class="card c7"><h2>Přesměrování</h2>
+    <div class="tbl"><table>
+      <tr><th>Zápis</th><th>Význam</th></tr>
+      <tr><td><code>prikaz &gt; soubor</code></td><td>stdout do souboru (přepíše)</td></tr>
+      <tr><td><code>prikaz &gt;&gt; soubor</code></td><td>stdout na konec souboru (připojí)</td></tr>
+      <tr><td><code>prikaz &lt; soubor</code></td><td>stdin ze souboru</td></tr>
+      <tr><td><code>prikaz 2&gt; chyby.log</code></td><td>jen chyby do souboru</td></tr>
+      <tr><td><code>prikaz &gt; vse.log 2&gt;&amp;1</code></td><td>výstup i chyby do jednoho souboru</td></tr>
+      <tr><td><code>prikaz &amp;&gt; vse.log</code></td><td>totéž, kratší zápis v bashi</td></tr>
+      <tr><td><code>prikaz 2&gt; /dev/null</code></td><td>chyby zahodit</td></tr>
+    </table></div>
+<pre>$ ls /etc &gt; seznam.txt
+$ date &gt;&gt; zaznam.log
+$ find / -name "*.conf" 2&gt;/dev/null     <span class="cm"># bez hlášek „Permission denied“</span>
+$ sort &lt; jmena.txt</pre>
+  </article>
+
+  <article class="card c7"><h2>Roura <code>|</code></h2>
+    <div class="syntax"><b>prikaz1</b> <em>|</em> <b>prikaz2</b> <em>|</em> <b>prikaz3</b></div>
+    <p>stdout levého příkazu se stane stdin pravého. Data tečou zleva doprava a nic se neukládá na disk.</p>
+<pre>$ ls -l /etc | less                    <span class="cm"># listování dlouhým výpisem</span>
+$ cat /etc/passwd | wc -l              <span class="cm"># kolik je účtů</span>
+$ ps aux | grep sshd                   <span class="cm"># najít proces</span>
+$ cut -d: -f1 /etc/passwd | sort       <span class="cm"># seřazená jména účtů</span>
+$ du -ah ~ | sort -rh | head -5        <span class="cm"># 5 největších položek</span>
+$ history | awk '{print $2}' | sort | uniq -c | sort -rn | head
+                                       <span class="cm"># moje nejčastější příkazy</span></pre>
+  </article>
+  <article class="card c5"><h2>Filtry do rour</h2>
+    <div class="tbl"><table>
+      <tr><td><code>sort</code></td><td>řadí (<code>-n</code> čísla, <code>-r</code> obráceně, <code>-h</code> 2K, 5M)</td></tr>
+      <tr><td><code>uniq</code></td><td>slučuje opakované sousední řádky (<code>-c</code> počty)</td></tr>
+      <tr><td><code>wc</code></td><td>počítá řádky <code>-l</code>, slova <code>-w</code>, znaky <code>-c</code></td></tr>
+      <tr><td><code>cut</code></td><td>vybere sloupec: <code>-d:</code> oddělovač, <code>-f1</code> pole</td></tr>
+      <tr><td><code>tr</code></td><td>nahradí znaky: <code>tr a-z A-Z</code></td></tr>
+      <tr><td><code>head</code>, <code>tail</code></td><td>začátek, konec</td></tr>
+      <tr><td><code>grep</code></td><td>řádky odpovídající vzoru (kapitola 7)</td></tr>
+      <tr><td><code>awk</code></td><td>práce se sloupci: <code>awk '{print $1}'</code></td></tr>
+      <tr><td><code>tee</code></td><td>zapíše do souboru a zároveň pošle dál</td></tr>
+      <tr><td><code>xargs</code></td><td>udělá z řádků argumenty dalšího příkazu</td></tr>
+    </table></div>
+  </article>
+
+  <article class="card c6"><h2>tee, xargs a here-doc</h2>
+<pre>$ ls -l | tee vypis.txt | wc -l        <span class="cm"># uloží i spočítá</span>
+$ echo "nameserver 1.1.1.1" | sudo tee -a /etc/resolv.conf
+                                       <span class="cm"># sudo echo &gt; soubor nefunguje, tee ano</span>
+$ find . -name "*.log" | xargs gzip    <span class="cm"># zabalí všechny logy</span>
+
+$ cat &gt; pozdrav.txt &lt;&lt;EOF
+Ahoj $USER,
+dnes je $(date +%A).
+EOF</pre>
+  </article>
+  <article class="card c6"><h2>Řetězení příkazů</h2>
+    <div class="tbl"><table>
+      <tr><td><code>a ; b</code></td><td>spustí <code>b</code> vždy, po skončení <code>a</code></td></tr>
+      <tr><td><code>a &amp;&amp; b</code></td><td>spustí <code>b</code>, jen když <code>a</code> uspěl (návratový kód 0)</td></tr>
+      <tr><td><code>a || b</code></td><td>spustí <code>b</code>, jen když <code>a</code> selhal</td></tr>
+    </table></div>
+<pre>$ sudo apt update &amp;&amp; sudo apt upgrade -y
+$ mkdir zaloha || echo "Adresář už existuje"
+$ ping -c1 8.8.8.8 &gt;/dev/null &amp;&amp; echo "online" || echo "offline"
+$ echo $?                              <span class="cm"># návratový kód posledního příkazu</span></pre>
+  </article>
+</div>
+</main>
+
+
+<div class="wrap"><nav class="pager" id="pager"></nav></div>
+<footer>Výuková prezentace · Úvod do operačních systémů · Unix-like OS · vizuální styl vychází z design systému VOŠ, SPŠ a SOŠ Varnsdorf.</footer>
+
+<script src="../js/app.js"></script>
+</body>
+</html>

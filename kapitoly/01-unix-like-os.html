@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Unix-like operační systémy · Unix-like operační systémy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-chapter="1">
+
+<div class="bar"><div class="bar-in">
+  <a class="brand" href="../index.html">Unix-like <span>OS</span></a>
+  <div class="bar-ch" id="barTitle">1 · Unix-like operační systémy</div>
+  <div class="bar-nav">
+    <a class="btn" id="barPrev" href="../index.html" aria-label="Předchozí kapitola">←</a>
+    <a class="btn" href="../index.html">Přehled</a>
+    <a class="btn" id="barNext" href="02-distribuce-a-gui.html" aria-label="Další kapitola">→</a>
+  </div>
+</div></div>
+
+<main class="wrap chapter">
+<header class="ch-head">
+  <div class="kicker">Kapitola 1 · Základy</div>
+  <h1>Unix-like operační systémy</h1>
+  <p class="lead">Jak funguje systém, ve kterém většina práce probíhá přes procesy, služby, uživatele, oprávnění a soubory, a proč je Linux tak důležitý pro servery, cloud i vývoj.</p>
+</header>
+<div class="grid">
+  <article class="card c4"><h2>Základní pojmy</h2>
+    <h3>Kernel</h3><p>Jádro OS. Zprostředkuje přístup k CPU, paměti, zařízením a procesům.</p>
+    <h3>Process</h3><p>Běžící program. Má vlastní adresní prostor, PID a oprávnění.</p>
+    <h3>Daemon</h3><p>Proces běžící na pozadí, typicky poskytující službu. Často končí na <code>d</code>: <code>sshd</code>, <code>systemd</code>.</p>
+    <h3>Shell</h3><p>Program, který interpretuje příkazy uživatele. Např. Bash, Zsh.</p>
+  </article>
+  <article class="card c4"><h2>Vrstvy systému</h2>
+    <div class="arch">
+      <div class="layer"><b>APLIKACE</b><span>Firefox · Python · editor · server</span></div>
+      <div class="layer"><b>SHELL &amp; NÁSTROJE</b><span>bash · ls · grep · ssh · systemctl</span></div>
+      <div class="layer"><b>SYSTÉMOVÉ KNIHOVNY / SLUŽBY</b><span>libc · systemd · síťové služby</span></div>
+      <div class="layer"><b>KERNEL</b><span>procesy · paměť · ovladače · souborové systémy · síť</span></div>
+      <div class="layer"><b>HARDWARE</b><span>CPU · RAM · disk · síťová karta · zařízení</span></div>
+    </div>
+  </article>
+  <article class="card c4"><h2>Stručná historie</h2>
+    <div class="timeline">
+      <div class="time"><b>1969</b><div>Vzniká Unix v Bellových laboratořích AT&amp;T.</div></div>
+      <div class="time"><b>1970–80s</b><div>Unix se šíří mezi univerzitami a vznikají jeho varianty.</div></div>
+      <div class="time"><b>1983</b><div>Richard Stallman zahajuje projekt GNU.</div></div>
+      <div class="time"><b>1991</b><div>Linus Torvalds zveřejňuje Linux kernel.</div></div>
+    </div>
+    <p class="muted">Unix-like neznamená „Unix“. Jde o systémy inspirované Unixem nebo implementující podobné principy a rozhraní.</p>
+  </article>
+
+  <article class="card c5"><h2>Kde se s nimi setkáme?</h2>
+    <div class="tbl"><table>
+      <tr><th>Systém</th><th>Typické využití</th></tr>
+      <tr><td>Linux distribuce</td><td>servery, cloud, vývoj, síťová zařízení, desktop</td></tr>
+      <tr><td>Android</td><td>mobily a tablety — používá Linux kernel</td></tr>
+      <tr><td>macOS</td><td>desktop/notebook — Unixový základ (Darwin)</td></tr>
+      <tr><td>FreeBSD / OpenBSD</td><td>servery, síť, bezpečnost, infrastruktura</td></tr>
+    </table></div>
+  </article>
+  <article class="card c7"><h2>Distribuce, balíčky a LTS</h2>
+    <p>Linux není jeden OS. <b>Distribuce</b> spojuje kernel, systémové nástroje, správu balíčků, konfiguraci a aplikace.</p>
+    <div class="tbl"><table>
+      <tr><th>Rodina</th><th>Balíček</th><th>Správce</th><th>Příklad</th></tr>
+      <tr><td>Debian / Ubuntu</td><td><code>.deb</code></td><td><code>apt</code></td><td><code>sudo apt install nginx</code></td></tr>
+      <tr><td>Fedora / RHEL</td><td><code>.rpm</code></td><td><code>dnf</code></td><td><code>sudo dnf install nginx</code></td></tr>
+      <tr><td>Arch</td><td>balíčky Arch</td><td><code>pacman</code></td><td><code>sudo pacman -S nginx</code></td></tr>
+    </table></div>
+    <p class="muted"><b>LTS</b> = Long Term Support. Označuje vydání s delší dobou podpory; není to typ instalačního balíčku. Podrobněji v kapitole 2.</p>
+  </article>
+
+  <article class="card c7"><h2>Linux shell — základní příkazy</h2>
+<pre>$ pwd
+/home/alice
+
+$ ls -la
+drwxr-xr-x 2 alice users 4096 Dokumenty
+-rw-r--r-- 1 alice users  842 poznamky.txt
+
+$ cd Dokumenty
+$ mkdir projekt
+$ cp ../poznamky.txt projekt/
+$ mv projekt/poznamky.txt projekt/readme.txt
+$ rm projekt/readme.txt
+
+$ cat /etc/os-release
+$ grep "NAME" /etc/os-release</pre>
+  </article>
+  <article class="card c5"><h2>Proč shell?</h2>
+    <p>Příkazy lze <b>řetězit</b>, přesměrovat a automatizovat.</p>
+<pre>$ ps aux | grep ssh
+$ cat log.txt | grep ERROR &gt; chyby.txt
+$ chmod +x script.sh
+$ ./script.sh</pre>
+    <div class="callout"><b>Tip:</b> <code>|</code> předá výstup dalšímu příkazu. <code>&gt;</code> zapíše výstup do souboru. Víc v kapitole 6.</div>
+  </article>
+
+  <article class="card c6"><h2>Uživatelé, skupiny a superuser</h2>
+    <p>Každý proces běží pod určitým <b>uživatelem</b>. Uživatel může být členem více <b>skupin</b>. Oprávnění se posuzují jako <b>owner / group / others</b>.</p>
+    <p><span class="tag">root</span> superuser má velmi rozsáhlá oprávnění: může měnit systém, instalovat software, spravovat uživatele i přistupovat k souborům bez běžných omezení.</p>
+    <p><b>sudo</b> umožní oprávněnému uživateli spustit konkrétní příkaz s vyššími právy — bezpečnější než běžně pracovat jako root.</p>
+  </article>
+  <article class="card c6"><h2>Oprávnění v praxi</h2>
+<pre>$ ls -l script.sh
+-rwxr-x--- 1 alice dev 120 script.sh
+ ↑↑↑ ↑↑↑ ↑↑↑
+ owner group others
+
+r = read     4
+w = write    2
+x = execute  1</pre>
+    <p class="muted"><code>rwxr-x---</code> = vlastník čte/zapisuje/spouští, skupina čte/spouští, ostatní nemají práva.</p>
+  </article>
+
+  <article class="card c8"><h2>Souborový systém</h2>
+    <p>V Unix-like systémech je vše organizováno do jediného stromu začínajícího kořenem <code>/</code>. Připojené disky a zařízení se objevují v tomto stromu.</p>
+    <div class="tbl"><table>
+      <tr><th>Cesta</th><th>Význam</th></tr>
+      <tr><td><code>/</code></td><td>kořen celého souborového systému</td></tr>
+      <tr><td><code>/home</code></td><td>domovské adresáře uživatelů</td></tr>
+      <tr><td><code>/etc</code></td><td>konfigurace systému a služeb</td></tr>
+      <tr><td><code>/var</code></td><td>proměnlivá data, logy, cache</td></tr>
+      <tr><td><code>/usr</code></td><td>programy, knihovny a sdílená data</td></tr>
+      <tr><td><code>/tmp</code></td><td>dočasná data</td></tr>
+      <tr><td><code>/dev</code></td><td>souborové rozhraní k zařízením</td></tr>
+    </table></div>
+  </article>
+  <article class="card c4"><h2>Zapamatuj si</h2>
+    <ul>
+      <li><b>Kernel</b> řídí zdroje a hardware.</li>
+      <li><b>Daemon</b> běží na pozadí jako služba.</li>
+      <li><b>Shell</b> interpretuje příkazy.</li>
+      <li><b>Root</b> má privilegovaná oprávnění.</li>
+      <li><b>chmod</b> mění oprávnění.</li>
+      <li><b>/</b> je kořen stromu souborového systému.</li>
+      <li><b>Distribuce</b> není totéž co Linux kernel.</li>
+    </ul>
+  </article>
+
+  <article class="card c7"><h2>„Všechno je soubor“</h2>
+    <p>V Unix-like systémech se se souborovým rozhraním pracuje nejen s běžnými soubory, ale také s adresáři a mnoha zařízeními či speciálními objekty.</p>
+    <div class="tbl"><table>
+      <tr><th>Znak</th><th>Typ</th><th>Příklad</th></tr>
+      <tr><td class="perms">-</td><td>běžný soubor</td><td><code>notes.txt</code>, <code>program.py</code></td></tr>
+      <tr><td class="perms">d</td><td>adresář</td><td><code>/home/alice</code></td></tr>
+      <tr><td class="perms">l</td><td>symbolický odkaz</td><td><code>latest -&gt; release</code></td></tr>
+      <tr><td class="perms">c</td><td>znakové zařízení</td><td><code>/dev/tty</code></td></tr>
+      <tr><td class="perms">b</td><td>blokové zařízení</td><td><code>/dev/sda</code></td></tr>
+      <tr><td class="perms">p</td><td>pojmenovaná roura</td><td>FIFO</td></tr>
+      <tr><td class="perms">s</td><td>socket</td><td>komunikace procesů</td></tr>
+    </table></div>
+    <p class="muted">Nejde o to, že každý objekt je doslova běžný soubor. Unixový princip je, že mnoho různých zdrojů lze ovládat podobným souborovým rozhraním.</p>
+  </article>
+  <article class="card c5"><h2>Jak typ poznám?</h2>
+<pre>$ ls -l
+-rw-r--r--  notes.txt
+drwxr-xr-x  Dokumenty
+lrwxrwxrwx  latest -&gt; release
+crw-rw----  /dev/tty
+
+$ file notes.txt
+notes.txt: UTF-8 Unicode text
+
+$ stat notes.txt</pre>
+    <div class="callout"><b>První znak</b> výstupu <code>ls -l</code> určuje typ objektu. <code>file</code> se pokouší určit obsah běžného souboru.</div>
+  </article>
+</div>
+</main>
+
+
+<div class="wrap"><nav class="pager" id="pager"></nav></div>
+<footer>Výuková prezentace · Úvod do operačních systémů · Unix-like OS · vizuální styl vychází z design systému VOŠ, SPŠ a SOŠ Varnsdorf.</footer>
+
+<script src="../js/app.js"></script>
+</body>
+</html>

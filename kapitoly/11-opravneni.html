@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Přidělování a odebírání oprávnění · Unix-like operační systémy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-chapter="11">
+
+<div class="bar"><div class="bar-in">
+  <a class="brand" href="../index.html">Unix-like <span>OS</span></a>
+  <div class="bar-ch" id="barTitle">11 · Přidělování a odebírání oprávnění</div>
+  <div class="bar-nav">
+    <a class="btn" id="barPrev" href="../index.html" aria-label="Předchozí kapitola">←</a>
+    <a class="btn" href="../index.html">Přehled</a>
+    <a class="btn" id="barNext" href="12-balicky.html" aria-label="Další kapitola">→</a>
+  </div>
+</div></div>
+
+<main class="wrap chapter">
+<header class="ch-head">
+  <div class="kicker">Kapitola 11 · Správa systému</div>
+  <h1>Přidělování a odebírání oprávnění</h1>
+  <p class="lead">Navazujeme na kapitolu 1: každý soubor má vlastníka, skupinu a tři trojice práv. Teď je budeme měnit, a to i jemněji, než dovoluje klasické rwx.</p>
+</header>
+<div class="grid">
+  <article class="card c5"><h2>Co znamená r, w, x</h2>
+    <div class="tbl"><table>
+      <tr><th></th><th>u souboru</th><th>u adresáře</th></tr>
+      <tr><td class="perms">r</td><td>číst obsah</td><td>vypsat seznam souborů</td></tr>
+      <tr><td class="perms">w</td><td>měnit obsah</td><td>vytvářet, mazat, přejmenovat soubory uvnitř</td></tr>
+      <tr><td class="perms">x</td><td>spustit</td><td>vstoupit (<code>cd</code>) a přistupovat k souborům</td></tr>
+    </table></div>
+    <p class="muted">Smazání souboru tedy řídí právo <b>w na adresáři</b>, ne na souboru samotném.</p>
+  </article>
+  <article class="card c7"><h2>chmod — symbolický zápis</h2>
+    <div class="syntax"><b>chmod</b> <i>[ugoa][+-=][rwx]</i> <em>soubor</em></div>
+    <p><code>u</code> vlastník · <code>g</code> skupina · <code>o</code> ostatní · <code>a</code> všichni &nbsp;|&nbsp; <code>+</code> přidat · <code>-</code> odebrat · <code>=</code> nastavit přesně</p>
+<pre>$ chmod u+x skript.sh             <span class="cm"># vlastník smí spouštět</span>
+$ chmod g+w sdilene.txt           <span class="cm"># skupina smí zapisovat</span>
+$ chmod o-rwx tajne.txt           <span class="cm"># ostatním odebrat vše</span>
+$ chmod go-w report.pdf           <span class="cm"># skupině i ostatním odebrat zápis</span>
+$ chmod a+r verejne.html          <span class="cm"># všichni smí číst</span>
+$ chmod u=rw,g=r,o= data.csv      <span class="cm"># přesně rw-r-----</span>
+$ chmod -R g+rX projekt/          <span class="cm"># rekurzivně; X = x jen adresářům</span></pre>
+  </article>
+
+  <article class="card c7"><h2>chmod — číselný (oktalový) zápis</h2>
+    <p>Sečteme hodnoty <b>r = 4, w = 2, x = 1</b> pro každou trojici zvlášť.</p>
+    <div class="tbl"><table>
+      <tr><th>Číslo</th><th>Práva</th><th>Typické použití</th></tr>
+      <tr><td class="perms">755</td><td><code>rwxr-xr-x</code></td><td>skripty, programy, adresáře</td></tr>
+      <tr><td class="perms">644</td><td><code>rw-r--r--</code></td><td>běžné soubory, webové stránky</td></tr>
+      <tr><td class="perms">700</td><td><code>rwx------</code></td><td>soukromý adresář, <code>~/.ssh</code></td></tr>
+      <tr><td class="perms">600</td><td><code>rw-------</code></td><td>soukromý klíč, soubor s heslem</td></tr>
+      <tr><td class="perms">750</td><td><code>rwxr-x---</code></td><td>adresář týmu, ostatní nemají přístup</td></tr>
+      <tr><td class="perms">660</td><td><code>rw-rw----</code></td><td>sdílený soubor ve skupině</td></tr>
+    </table></div>
+<pre>$ chmod 600 ~/.ssh/id_ed25519
+$ chmod 755 zaloha.sh
+$ stat -c '%a %A %n' zaloha.sh
+<span class="out">755 -rwxr-xr-x zaloha.sh</span></pre>
+  </article>
+  <article class="card c5"><h2>chown a chgrp — vlastnictví</h2>
+    <div class="syntax"><b>chown</b> <i>[uživatel][:skupina]</i> <em>soubor</em></div>
+<pre>$ sudo chown jan soubor.txt            <span class="cm"># nový vlastník</span>
+$ sudo chown jan:ucitele soubor.txt    <span class="cm"># vlastník i skupina</span>
+$ sudo chown :ucitele soubor.txt       <span class="cm"># jen skupina</span>
+$ sudo chgrp ucitele soubor.txt        <span class="cm"># totéž</span>
+$ sudo chown -R www-data:www-data /var/www/web</pre>
+    <p class="muted">Vlastníka může měnit jen root. Běžný uživatel může změnit skupinu svého souboru na jinou svou skupinu.</p>
+    <h3>umask — výchozí práva</h3>
+<pre>$ umask
+<span class="out">0022</span>       <span class="cm"># nové soubory 644, adresáře 755</span>
+$ umask 027   <span class="cm"># → 640 a 750</span></pre>
+  </article>
+
+  <article class="card c6"><h2>Práva přes členství ve skupině</h2>
+    <p>Nejčistší způsob, jak dát přístup více lidem: přidělit práva skupině a lidi do ní přidávat a odebírat.</p>
+<pre><span class="cm"># sdílený adresář pro tým</span>
+$ sudo addgroup projekt
+$ sudo mkdir /srv/projekt
+$ sudo chown root:projekt /srv/projekt
+$ sudo chmod 2770 /srv/projekt     <span class="cm"># 2 = SGID, nové soubory dědí skupinu</span>
+
+<span class="cm"># přidělit přístup</span>
+$ sudo gpasswd -a jan projekt
+<span class="cm"># odebrat přístup</span>
+$ sudo gpasswd -d jan projekt</pre>
+  </article>
+  <article class="card c6"><h2>Speciální bity</h2>
+    <div class="tbl"><table>
+      <tr><th>Bit</th><th>Hodnota</th><th>Účinek</th><th>Příklad</th></tr>
+      <tr><td><b>SUID</b></td><td>4000 · <code>u+s</code></td><td>program běží s právy vlastníka souboru</td><td><code>/usr/bin/passwd</code></td></tr>
+      <tr><td><b>SGID</b></td><td>2000 · <code>g+s</code></td><td>u adresáře: nové soubory dědí jeho skupinu</td><td>týmový adresář</td></tr>
+      <tr><td><b>Sticky</b></td><td>1000 · <code>+t</code></td><td>soubory v adresáři smí mazat jen jejich vlastník</td><td><code>/tmp</code></td></tr>
+    </table></div>
+<pre>$ ls -ld /tmp /usr/bin/passwd
+<span class="out">drwxrwxrwt  root root /tmp
+-rwsr-xr-x  root root /usr/bin/passwd</span>
+$ find / -perm -4000 -type f 2&gt;/dev/null   <span class="cm"># všechny SUID programy</span></pre>
+  </article>
+
+  <article class="card c12"><h2>ACL — práva pro konkrétního uživatele</h2>
+    <p>Klasická práva znají jen jednoho vlastníka a jednu skupinu. Když potřebujeme dát přístup jednomu dalšímu člověku bez nové skupiny, použijeme ACL (<code>sudo apt install acl</code>).</p>
+    <div class="grid" style="margin:0">
+      <div class="c6">
+<pre><span class="cm"># přidělit</span>
+$ setfacl -m u:petr:rw zadani.odt          <span class="cm"># petr smí číst a zapisovat</span>
+$ setfacl -m g:ucitele:r hodnoceni.ods     <span class="cm"># skupina smí číst</span>
+$ setfacl -R -m u:petr:rwX projekt/        <span class="cm"># rekurzivně</span>
+$ setfacl -d -m u:petr:rw projekt/         <span class="cm"># výchozí pro nové soubory</span></pre>
+      </div>
+      <div class="c6">
+<pre><span class="cm"># zkontrolovat a odebrat</span>
+$ getfacl zadani.odt
+<span class="out">user::rw-
+user:petr:rw-
+group::r--
+mask::rw-
+other::---</span>
+$ setfacl -x u:petr zadani.odt             <span class="cm"># odebrat petrovi</span>
+$ setfacl -b zadani.odt                    <span class="cm"># odebrat všechna ACL</span></pre>
+      </div>
+    </div>
+    <div class="callout ok">Soubor s ACL poznáte podle znaménka <code>+</code> ve výpisu: <code>-rw-rw----+</code>.</div>
+  </article>
+</div>
+</main>
+
+
+<div class="wrap"><nav class="pager" id="pager"></nav></div>
+<footer>Výuková prezentace · Úvod do operačních systémů · Unix-like OS · vizuální styl vychází z design systému VOŠ, SPŠ a SOŠ Varnsdorf.</footer>
+
+<script src="../js/app.js"></script>
+</body>
+</html>

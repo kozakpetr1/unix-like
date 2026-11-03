@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Instalace a aktualizace balíčků · Unix-like operační systémy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-chapter="12">
+
+<div class="bar"><div class="bar-in">
+  <a class="brand" href="../index.html">Unix-like <span>OS</span></a>
+  <div class="bar-ch" id="barTitle">12 · Instalace a aktualizace balíčků</div>
+  <div class="bar-nav">
+    <a class="btn" id="barPrev" href="../index.html" aria-label="Předchozí kapitola">←</a>
+    <a class="btn" href="../index.html">Přehled</a>
+    <a class="btn" id="barNext" href="13-skriptovani.html" aria-label="Další kapitola">→</a>
+  </div>
+</div></div>
+
+<main class="wrap chapter">
+<header class="ch-head">
+  <div class="kicker">Kapitola 12 · Správa systému</div>
+  <h1>Instalace a aktualizace balíčků</h1>
+  <p class="lead">Software v Debianu instalujeme z repozitářů pomocí apt. Ten stáhne balíček, ověří jeho podpis, doinstaluje závislosti a později ho umí i aktualizovat.</p>
+</header>
+<div class="grid">
+  <article class="card c7"><h2>apt — každodenní příkazy</h2>
+    <div class="syntax"><b>sudo apt</b> <i>update|upgrade|install|remove|purge|search|show</i> <em>[balíček]</em></div>
+<pre>$ sudo apt update                <span class="cm"># stáhnout aktuální seznam balíčků</span>
+$ apt list --upgradable          <span class="cm"># co se dá aktualizovat</span>
+$ sudo apt upgrade               <span class="cm"># aktualizovat nainstalované</span>
+$ sudo apt full-upgrade          <span class="cm"># … i když je třeba něco přidat/odebrat</span>
+
+$ apt search "web server"        <span class="cm"># hledat</span>
+$ apt show nginx                 <span class="cm"># popis, verze, závislosti</span>
+$ sudo apt install nginx curl    <span class="cm"># nainstalovat (i víc najednou)</span>
+$ sudo apt install -y htop       <span class="cm"># bez dotazu na potvrzení</span>
+
+$ sudo apt remove nginx          <span class="cm"># odebrat, konfigurace zůstane</span>
+$ sudo apt purge nginx           <span class="cm"># odebrat včetně konfigurace</span>
+$ sudo apt autoremove            <span class="cm"># uklidit nepotřebné závislosti</span>
+$ sudo apt clean                 <span class="cm"># smazat stažené .deb z cache</span></pre>
+  </article>
+  <article class="card c5"><h2>Jak apt funguje</h2>
+    <div class="flow"><span>repozitář</span><i>→</i><span>apt update</span><i>→</i><span>seznam balíčků</span></div>
+    <div class="flow"><span>apt install</span><i>→</i><span>stáhne .deb</span><i>→</i><span>ověří podpis</span><i>→</i><span>dpkg</span></div>
+    <div class="callout"><b>update ≠ upgrade.</b> <code>update</code> jen zjistí, co je nového. Nainstaluje to až <code>upgrade</code>. Proto se píšou spolu: <code>sudo apt update &amp;&amp; sudo apt upgrade</code>.</div>
+    <h3>apt × apt-get</h3>
+    <p><code>apt</code> je pohodlnější pro člověka (průběh, barvy). Ve skriptech se používá <code>apt-get</code>, protože jeho výstup se nemění.</p>
+  </article>
+
+  <article class="card c6"><h2>dpkg — práce s jednotlivými .deb</h2>
+<pre>$ sudo apt install ./program_1.2_amd64.deb   <span class="cm"># doporučeno: vyřeší závislosti</span>
+$ sudo dpkg -i program_1.2_amd64.deb         <span class="cm"># nízkoúrovňově</span>
+$ sudo apt -f install                        <span class="cm"># dořešit chybějící závislosti</span>
+
+$ dpkg -l | grep nginx           <span class="cm"># je nainstalován?</span>
+$ dpkg -L nginx                  <span class="cm"># jaké soubory balíček obsahuje</span>
+$ dpkg -S /usr/sbin/sshd         <span class="cm"># ke kterému balíčku soubor patří</span>
+$ apt list --installed | wc -l   <span class="cm"># počet nainstalovaných</span></pre>
+    <div class="callout warn">.deb soubory stažené z neznámých webů nejsou ověřené. Instalujte primárně z oficiálních repozitářů.</div>
+  </article>
+  <article class="card c6"><h2>Repozitáře</h2>
+    <p>Debian 13 „trixie“ používá formát deb822 v souboru <code>/etc/apt/sources.list.d/debian.sources</code> (starší systémy mají <code>/etc/apt/sources.list</code>).</p>
+<pre>Types: deb
+URIs: https://deb.debian.org/debian
+Suites: trixie trixie-updates
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb
+URIs: https://security.debian.org/debian-security
+Suites: trixie-security
+Components: main contrib non-free non-free-firmware</pre>
+    <div class="tbl"><table>
+      <tr><td><code>main</code></td><td>svobodný software, plně podporovaný</td></tr>
+      <tr><td><code>contrib</code></td><td>svobodný, ale závisí na nesvobodném</td></tr>
+      <tr><td><code>non-free(-firmware)</code></td><td>nesvobodný software a firmware (Wi-Fi, GPU)</td></tr>
+    </table></div>
+  </article>
+
+  <article class="card c6"><h2>Automatické bezpečnostní aktualizace</h2>
+<pre>$ sudo apt install unattended-upgrades
+$ sudo dpkg-reconfigure -plow unattended-upgrades
+$ systemctl list-timers apt-daily*        <span class="cm"># kdy poběží</span>
+$ less /var/log/unattended-upgrades/unattended-upgrades.log</pre>
+    <p class="muted">Na serverech je to rozumný základ: bezpečnostní opravy se nainstalují samy, větší změny dělá správce ručně.</p>
+  </article>
+  <article class="card c6"><h2>Další způsoby instalace</h2>
+    <div class="tbl"><table>
+      <tr><th>Zdroj</th><th>Příkaz</th><th>Poznámka</th></tr>
+      <tr><td>Flatpak</td><td><code>flatpak install flathub org.gimp.GIMP</code></td><td>desktopové aplikace v izolaci, novější verze</td></tr>
+      <tr><td>Snap</td><td><code>sudo snap install code --classic</code></td><td>hlavně Ubuntu</td></tr>
+      <tr><td>Repozitář výrobce</td><td>klíč + soubor v <code>sources.list.d</code></td><td>Docker, VS Code, Google Chrome</td></tr>
+      <tr><td>pip / npm</td><td><code>pipx install …</code>, <code>npm i -g …</code></td><td>nástroje jazyků; do systému raději přes <code>pipx</code> nebo venv</td></tr>
+    </table></div>
+    <div class="callout"><b>Dál:</b> v kapitole 13 spojíte příkazy z celého kurzu do skriptů.</div>
+  </article>
+</div>
+</main>
+
+
+<div class="wrap"><nav class="pager" id="pager"></nav></div>
+<footer>Výuková prezentace · Úvod do operačních systémů · Unix-like OS · vizuální styl vychází z design systému VOŠ, SPŠ a SOŠ Varnsdorf.</footer>
+
+<script src="../js/app.js"></script>
+</body>
+</html>

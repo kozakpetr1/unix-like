@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Procesy a služby · Unix-like operační systémy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-chapter="8">
+
+<div class="bar"><div class="bar-in">
+  <a class="brand" href="../index.html">Unix-like <span>OS</span></a>
+  <div class="bar-ch" id="barTitle">8 · Procesy a služby</div>
+  <div class="bar-nav">
+    <a class="btn" id="barPrev" href="../index.html" aria-label="Předchozí kapitola">←</a>
+    <a class="btn" href="../index.html">Přehled</a>
+    <a class="btn" id="barNext" href="09-prikazy-spravce.html" aria-label="Další kapitola">→</a>
+  </div>
+</div></div>
+
+<main class="wrap chapter">
+<header class="ch-head">
+  <div class="kicker">Kapitola 8 · Správa systému</div>
+  <h1>Procesy a služby</h1>
+  <p class="lead">Každý spuštěný program je proces s vlastním číslem PID. Umíme je vypsat, sledovat, poslat na pozadí a ukončit, a dlouhodobě běžící služby spravujeme přes systemd.</p>
+</header>
+<div class="grid">
+  <article class="card c7"><h2>Výpis procesů</h2>
+<pre>$ ps                      <span class="cm"># procesy v tomto terminálu</span>
+$ ps aux                  <span class="cm"># všechny procesy všech uživatelů</span>
+$ ps aux --sort=-%mem | head    <span class="cm"># největší spotřeba paměti</span>
+$ ps -ef --forest         <span class="cm"># i s rodiči (PPID)</span>
+$ pstree -p               <span class="cm"># strom procesů</span>
+$ pgrep -a nginx          <span class="cm"># PID podle jména</span>
+$ pidof sshd
+
+$ ps aux | head -3
+<span class="out">USER   PID %CPU %MEM    VSZ   RSS TTY  STAT START  TIME COMMAND
+root     1  0.0  0.3 168M  12M ?    Ss   08:01  0:02 /sbin/init
+alice 2412  1.2  2.1 812M  84M pts/0 Sl  08:15  0:30 python3 app.py</span></pre>
+  </article>
+  <article class="card c5"><h2>Stavy procesu (STAT)</h2>
+    <div class="tbl"><table>
+      <tr><td class="perms">R</td><td>běží nebo čeká na CPU</td></tr>
+      <tr><td class="perms">S</td><td>spí, čeká na událost (nejčastější)</td></tr>
+      <tr><td class="perms">D</td><td>nepřerušitelné čekání, typicky na disk</td></tr>
+      <tr><td class="perms">T</td><td>zastavený (<span class="kbd">Ctrl+Z</span>)</td></tr>
+      <tr><td class="perms">Z</td><td>zombie: skončil, rodič si nevyzvedl výsledek</td></tr>
+    </table></div>
+    <h3>Sledování v reálném čase</h3>
+    <p><code>top</code> je vždy k dispozici, <code>htop</code> (<code>apt install htop</code>) je přehlednější a ovládá se šipkami. V <code>top</code>: <span class="kbd">M</span> řadit podle paměti, <span class="kbd">P</span> podle CPU, <span class="kbd">k</span> ukončit proces, <span class="kbd">q</span> konec.</p>
+  </article>
+
+  <article class="card c6"><h2>Popředí a pozadí</h2>
+    <div class="syntax"><b>příkaz</b> <em>&amp;</em> &nbsp;<span class="muted">→ spustí na pozadí</span></div>
+<pre>$ sleep 300 &amp;                 <span class="cm"># hned vrátí prompt</span>
+<span class="out">[1] 3051</span>
+$ jobs                        <span class="cm"># úlohy tohoto shellu</span>
+<span class="out">[1]+  Running    sleep 300 &amp;</span>
+$ fg %1                       <span class="cm"># zpět do popředí</span>
+<span class="cm">  … Ctrl+Z …                    pozastavit</span>
+$ bg %1                       <span class="cm"># pokračovat na pozadí</span>
+
+$ nohup ./zaloha.sh &gt; zaloha.log 2&gt;&amp;1 &amp;
+                              <span class="cm"># přežije i odhlášení</span>
+$ disown %1                   <span class="cm"># odpojit úlohu od shellu</span></pre>
+  </article>
+  <article class="card c6"><h2>Signály a ukončení procesu</h2>
+    <div class="tbl"><table>
+      <tr><th>Signál</th><th>Číslo</th><th>Význam</th></tr>
+      <tr><td><code>SIGTERM</code></td><td>15</td><td>slušná žádost o ukončení (výchozí)</td></tr>
+      <tr><td><code>SIGKILL</code></td><td>9</td><td>okamžité ukončení, nelze zachytit</td></tr>
+      <tr><td><code>SIGINT</code></td><td>2</td><td>přerušení (<span class="kbd">Ctrl+C</span>)</td></tr>
+      <tr><td><code>SIGHUP</code></td><td>1</td><td>znovu načíst konfiguraci (u démonů)</td></tr>
+      <tr><td><code>SIGSTOP</code> / <code>SIGCONT</code></td><td>19 / 18</td><td>pozastavit / pokračovat</td></tr>
+    </table></div>
+<pre>$ kill 3051              <span class="cm"># SIGTERM</span>
+$ kill -9 3051           <span class="cm"># SIGKILL, až když TERM nepomůže</span>
+$ pkill -f "python3 app.py"   <span class="cm"># podle jména/příkazu</span>
+$ killall firefox        <span class="cm"># všechny procesy daného jména</span>
+$ kill -l                <span class="cm"># seznam signálů</span></pre>
+  </article>
+
+  <article class="card c5"><h2>Priorita</h2>
+    <p>Hodnota <b>nice</b> je od −20 (nejvyšší priorita) do 19 (nejnižší). Zvýšit prioritu může jen root.</p>
+<pre>$ nice -n 10 tar czf zaloha.tgz /data
+$ renice -n 5 -p 3051
+$ sudo renice -n -5 -p 3051</pre>
+    <h3>Pod kapotou</h3>
+    <p>Informace o každém procesu jsou v adresáři <code>/proc/PID/</code>, např. <code>cat /proc/3051/status</code>.</p>
+  </article>
+  <article class="card c7"><h2>Služby (systemd)</h2>
+    <div class="syntax"><b>systemctl</b> <i>status|start|stop|restart|reload|enable|disable</i> <em>služba</em></div>
+<pre>$ systemctl status ssh                <span class="cm"># běží? od kdy? poslední logy</span>
+$ sudo systemctl restart nginx
+$ sudo systemctl enable --now nginx   <span class="cm"># spouštět po startu + hned spustit</span>
+$ sudo systemctl disable bluetooth
+$ systemctl list-units --type=service --state=running
+$ systemctl --failed                  <span class="cm"># co selhalo</span>
+
+$ journalctl -u nginx -f              <span class="cm"># logy služby živě</span>
+$ journalctl -b -p err                <span class="cm"># chyby od posledního startu</span></pre>
+  </article>
+</div>
+</main>
+
+
+<div class="wrap"><nav class="pager" id="pager"></nav></div>
+<footer>Výuková prezentace · Úvod do operačních systémů · Unix-like OS · vizuální styl vychází z design systému VOŠ, SPŠ a SOŠ Varnsdorf.</footer>
+
+<script src="../js/app.js"></script>
+</body>
+</html>

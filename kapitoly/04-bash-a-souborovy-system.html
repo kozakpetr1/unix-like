@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>bash a souborový systém · Unix-like operační systémy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-chapter="4">
+
+<div class="bar"><div class="bar-in">
+  <a class="brand" href="../index.html">Unix-like <span>OS</span></a>
+  <div class="bar-ch" id="barTitle">4 · bash a souborový systém</div>
+  <div class="bar-nav">
+    <a class="btn" id="barPrev" href="../index.html" aria-label="Předchozí kapitola">←</a>
+    <a class="btn" href="../index.html">Přehled</a>
+    <a class="btn" id="barNext" href="05-editory-nano-a-vim.html" aria-label="Další kapitola">→</a>
+  </div>
+</div></div>
+
+<main class="wrap chapter">
+<header class="ch-head">
+  <div class="kicker">Kapitola 4 · bash</div>
+  <h1>bash a souborový systém</h1>
+  <p class="lead">Bash je výchozí shell v Debianu. Každý příkaz má stejnou stavbu, a jakmile ji umíme číst, umíme číst i nápovědu ke kterémukoli jinému příkazu.</p>
+</header>
+<div class="grid">
+  <article class="card c7"><h2>Syntaxe příkazu</h2>
+    <div class="syntax"><b>příkaz</b> <i>[-přepínače]</i> <em>[argumenty]</em></div>
+<pre>$ ls -l -a /etc          <span class="cm"># krátké přepínače zvlášť</span>
+$ ls -la /etc            <span class="cm"># … nebo spojené</span>
+$ ls --all --human-readable -l
+$ cp -r zdroj/ cil/      <span class="cm"># argumenty: odkud, kam</span></pre>
+    <h3>Výzva (prompt)</h3>
+<pre>alice@lab-pc01:~/projekt$       <span class="cm"># uživatel@počítač:adresář  $ = běžný uživatel</span>
+root@lab-pc01:/etc#             <span class="cm"># # = root (opatrně!)</span></pre>
+  </article>
+  <article class="card c5"><h2>Nápověda a pomůcky</h2>
+    <div class="tbl"><table>
+      <tr><td><code>man ls</code></td><td>manuálová stránka (<span class="kbd">q</span> konec, <span class="kbd">/</span> hledání)</td></tr>
+      <tr><td><code>ls --help</code></td><td>stručný přehled přepínačů</td></tr>
+      <tr><td><code>type cd</code></td><td>je to vestavěný příkaz, nebo program?</td></tr>
+      <tr><td><code>which python3</code></td><td>kde leží spustitelný soubor</td></tr>
+      <tr><td><span class="kbd">Tab</span></td><td>doplnění příkazu a cesty</td></tr>
+      <tr><td><span class="kbd">↑</span> / <span class="kbd">Ctrl+R</span></td><td>historie / hledání v historii</td></tr>
+      <tr><td><span class="kbd">Ctrl+C</span></td><td>přerušit běžící příkaz</td></tr>
+      <tr><td><span class="kbd">Ctrl+L</span></td><td>vyčistit obrazovku</td></tr>
+    </table></div>
+  </article>
+
+  <article class="card c5"><h2>Cesty</h2>
+    <div class="tbl"><table>
+      <tr><td><code>/etc/ssh</code></td><td><b>absolutní</b> — začíná od kořene <code>/</code></td></tr>
+      <tr><td><code>docs/a.txt</code></td><td><b>relativní</b> — od aktuálního adresáře</td></tr>
+      <tr><td><code>~</code></td><td>domovský adresář (<code>/home/alice</code>)</td></tr>
+      <tr><td><code>.</code></td><td>aktuální adresář</td></tr>
+      <tr><td><code>..</code></td><td>nadřazený adresář</td></tr>
+      <tr><td><code>cd -</code></td><td>zpět do předchozího adresáře</td></tr>
+    </table></div>
+    <h3>Zástupné znaky</h3>
+<pre>$ ls *.txt          <span class="cm"># libovolný počet znaků</span>
+$ ls foto?.jpg      <span class="cm"># právě jeden znak</span>
+$ ls [abc]*         <span class="cm"># začíná a, b nebo c</span>
+$ mkdir -p web/{css,js,img}   <span class="cm"># rozvinutí závorek</span></pre>
+  </article>
+  <article class="card c7"><h2>Navigace a prohlížení</h2>
+<pre>$ pwd                        <span class="cm"># kde jsem</span>
+$ cd /var/log                <span class="cm"># přejít</span>
+$ ls -lh                     <span class="cm"># výpis s čitelnou velikostí</span>
+$ ls -lt                     <span class="cm"># seřadit podle času změny</span>
+$ tree -L 2                  <span class="cm"># strom (apt install tree)</span>
+
+$ cat /etc/hostname          <span class="cm"># vypsat celý soubor</span>
+$ less /var/log/syslog       <span class="cm"># listovat (q = konec)</span>
+$ head -n 5 /etc/passwd      <span class="cm"># prvních 5 řádků</span>
+$ tail -n 20 soubor.log      <span class="cm"># posledních 20 řádků</span>
+$ sudo tail -f /var/log/nginx/access.log   <span class="cm"># sledovat živě</span>
+$ wc -l /etc/passwd          <span class="cm"># počet řádků</span></pre>
+  </article>
+
+  <article class="card c7"><h2>Vytváření, kopírování, přesun, mazání</h2>
+<pre>$ mkdir projekt              <span class="cm"># nový adresář</span>
+$ mkdir -p a/b/c             <span class="cm"># včetně rodičů</span>
+$ touch poznamky.txt         <span class="cm"># prázdný soubor / aktualizace času</span>
+
+$ cp a.txt b.txt             <span class="cm"># kopie souboru</span>
+$ cp -r projekt/ zaloha/     <span class="cm"># kopie adresáře (rekurzivně)</span>
+$ cp -i a.txt b.txt          <span class="cm"># zeptá se před přepsáním</span>
+
+$ mv a.txt docs/             <span class="cm"># přesun</span>
+$ mv stary.txt novy.txt      <span class="cm"># přejmenování</span>
+
+$ rm b.txt                   <span class="cm"># smazat soubor</span>
+$ rmdir prazdny/             <span class="cm"># smazat prázdný adresář</span>
+$ rm -r zaloha/              <span class="cm"># smazat adresář s obsahem</span>
+$ rm -ri zaloha/             <span class="cm"># … s potvrzováním</span></pre>
+    <div class="callout warn"><b>Pozor:</b> <code>rm</code> nemá koš. Co smažeme, je pryč. Před <code>rm -r</code> s hvězdičkou si nejdřív pusťte <code>ls</code> se stejným vzorem.</div>
+  </article>
+  <article class="card c5"><h2>Hledání a odkazy</h2>
+<pre>$ find ~ -name "*.pdf"                 <span class="cm"># podle jména</span>
+$ find /var/log -type f -size +10M     <span class="cm"># soubory nad 10 MB</span>
+$ find . -mtime -1                     <span class="cm"># změněné za 24 h</span>
+$ find /tmp -name "*.tmp" -delete     <span class="cm"># najít a smazat</span>
+
+$ ln -s /var/www/html web    <span class="cm"># symbolický odkaz</span>
+$ ls -l web
+<span class="out">lrwxrwxrwx 1 alice alice 13 web -&gt; /var/www/html</span>
+
+$ du -sh ~/Stažené           <span class="cm"># velikost adresáře</span>
+$ df -h                      <span class="cm"># volné místo na discích</span></pre>
+  </article>
+
+  <article class="card c12"><h2>Uvozovky a proměnné</h2>
+    <div class="grid" style="margin:0">
+      <div class="c6">
+<pre>$ jmeno="Alice"              <span class="cm"># bez mezer kolem =</span>
+$ echo "Ahoj $jmeno"         <span class="cm"># "…" proměnné rozvine</span>
+<span class="out">Ahoj Alice</span>
+$ echo 'Ahoj $jmeno'         <span class="cm"># '…' doslova</span>
+<span class="out">Ahoj $jmeno</span>
+$ echo "Dnes je $(date +%d.%m.%Y)"   <span class="cm"># výstup příkazu</span></pre>
+      </div>
+      <div class="c6">
+<pre>$ echo $HOME $USER $SHELL    <span class="cm"># proměnné prostředí</span>
+$ echo $PATH                 <span class="cm"># kde se hledají příkazy</span>
+$ touch "muj soubor.txt"     <span class="cm"># mezera v názvu → uvozovky</span>
+$ alias ll='ls -lah'         <span class="cm"># zkratka (trvale do ~/.bashrc)</span>
+$ history | tail -5          <span class="cm"># posledních 5 příkazů</span></pre>
+      </div>
+    </div>
+  </article>
+</div>
+</main>
+
+
+<div class="wrap"><nav class="pager" id="pager"></nav></div>
+<footer>Výuková prezentace · Úvod do operačních systémů · Unix-like OS · vizuální styl vychází z design systému VOŠ, SPŠ a SOŠ Varnsdorf.</footer>
+
+<script src="../js/app.js"></script>
+</body>
+</html>

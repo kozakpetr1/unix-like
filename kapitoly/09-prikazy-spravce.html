@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Příkazy správce · Unix-like operační systémy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-chapter="9">
+
+<div class="bar"><div class="bar-in">
+  <a class="brand" href="../index.html">Unix-like <span>OS</span></a>
+  <div class="bar-ch" id="barTitle">9 · Příkazy správce</div>
+  <div class="bar-nav">
+    <a class="btn" id="barPrev" href="../index.html" aria-label="Předchozí kapitola">←</a>
+    <a class="btn" href="../index.html">Přehled</a>
+    <a class="btn" id="barNext" href="10-uzivatele-a-skupiny.html" aria-label="Další kapitola">→</a>
+  </div>
+</div></div>
+
+<main class="wrap chapter">
+<header class="ch-head">
+  <div class="kicker">Kapitola 9 · Správa systému</div>
+  <h1>Příkazy správce: sudo a su</h1>
+  <p class="lead">Na správu systému potřebujeme práva roota. Pracovat jako root celý den je ale nebezpečné, proto si práva půjčujeme jen na konkrétní příkaz.</p>
+</header>
+<div class="grid">
+  <article class="card c6"><h2>sudo — jeden příkaz jako root</h2>
+    <div class="syntax"><b>sudo</b> <i>[-u uživatel]</i> <em>příkaz</em></div>
+<pre>$ sudo apt update                   <span class="cm"># zadává se VLASTNÍ heslo</span>
+$ sudo -u www-data ls /var/www      <span class="cm"># jako jiný uživatel</span>
+$ sudo -l                           <span class="cm"># co smím přes sudo spouštět</span>
+$ sudo -i                           <span class="cm"># přihlašovací shell roota</span>
+$ sudo !!                           <span class="cm"># zopakovat poslední příkaz se sudo</span>
+$ sudoedit /etc/hosts               <span class="cm"># bezpečná úprava souboru</span>
+$ sudo -k                           <span class="cm"># zapomenout heslo hned</span></pre>
+    <p class="muted">Po zadání si sudo heslo pamatuje 15 minut. Každé použití se zapisuje do logu.</p>
+  </article>
+  <article class="card c6"><h2>su — přepnutí uživatele</h2>
+    <div class="syntax"><b>su</b> <i>[-]</i> <em>[uživatel]</em></div>
+<pre>$ su -                    <span class="cm"># stát se rootem, zadává se heslo ROOTA</span>
+$ su - alice              <span class="cm"># stát se uživatelem alice</span>
+$ su alice                <span class="cm"># bez „-“: zůstane prostředí a adresář</span>
+$ su -c 'apt update' -    <span class="cm"># jeden příkaz jako root</span>
+$ exit                    <span class="cm"># návrat</span>
+
+$ whoami
+$ id</pre>
+    <div class="callout"><code>su -</code> (s pomlčkou) načte prostředí cílového uživatele včetně <code>PATH</code>. Bez pomlčky mohou chybět příkazy z <code>/usr/sbin</code>.</div>
+  </article>
+
+  <article class="card c12"><h2>sudo × su</h2>
+    <div class="tbl"><table>
+      <tr><th></th><th>sudo</th><th>su</th></tr>
+      <tr><td>Čí heslo</td><td>vlastní heslo uživatele</td><td>heslo cílového účtu (roota)</td></tr>
+      <tr><td>Rozsah</td><td>jeden příkaz, lze omezit na konkrétní příkazy</td><td>celý shell, plná práva</td></tr>
+      <tr><td>Záznam</td><td>každý příkaz v logu s jménem uživatele</td><td>jen že se někdo přepnul</td></tr>
+      <tr><td>Sdílení hesla roota</td><td>není potřeba, root může být zamčený</td><td>každý správce zná heslo roota</td></tr>
+      <tr><td>Kdy</td><td>běžná správa (doporučeno)</td><td>záchrana, systémy bez sudo, delší práce jako jiný uživatel</td></tr>
+    </table></div>
+  </article>
+
+  <article class="card c6"><h2>Kdo smí sudo</h2>
+    <p>V Debianu dostanou plná práva členové skupiny <code>sudo</code> (v rodině Red Hat je to skupina <code>wheel</code>).</p>
+<pre>$ su -                           <span class="cm"># pokud sudo zatím nemáme</span>
+# apt install sudo               <span class="cm"># když bylo při instalaci zadáno heslo roota</span>
+# usermod -aG sudo alice
+# exit
+<span class="cm"># alice se musí odhlásit a znovu přihlásit</span>
+
+$ groups alice
+<span class="out">alice : alice sudo</span>
+
+<span class="cm"># kdo sudo použil</span>
+$ sudo journalctl _COMM=sudo --since today</pre>
+  </article>
+  <article class="card c6"><h2>Soubor sudoers</h2>
+    <p>Pravidla jsou v <code>/etc/sudoers</code> a v souborech v <code>/etc/sudoers.d/</code>. Upravují se <b>jen</b> přes <code>visudo</code>, které před uložením zkontroluje syntaxi.</p>
+<pre>$ sudo visudo
+$ sudo visudo -f /etc/sudoers.d/web
+
+<span class="cm"># kdo   odkud=(jako koho)  co</span>
+root    ALL=(ALL:ALL) ALL
+%sudo   ALL=(ALL:ALL) ALL            <span class="cm"># % = skupina</span>
+
+<span class="cm"># bob smí jen restartovat web</span>
+bob     ALL=(root) /usr/bin/systemctl restart nginx</pre>
+    <div class="callout warn"><b>Chyba v sudoers</b> může zablokovat sudo všem. Proto vždy <code>visudo</code>, nikdy přímo editor. Volbu <code>NOPASSWD</code> používejte jen u úzce omezených příkazů.</div>
+  </article>
+</div>
+</main>
+
+
+<div class="wrap"><nav class="pager" id="pager"></nav></div>
+<footer>Výuková prezentace · Úvod do operačních systémů · Unix-like OS · vizuální styl vychází z design systému VOŠ, SPŠ a SOŠ Varnsdorf.</footer>
+
+<script src="../js/app.js"></script>
+</body>
+</html>

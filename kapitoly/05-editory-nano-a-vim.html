@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Editory nano a vim · Unix-like operační systémy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-chapter="5">
+
+<div class="bar"><div class="bar-in">
+  <a class="brand" href="../index.html">Unix-like <span>OS</span></a>
+  <div class="bar-ch" id="barTitle">5 · Editory nano a vim</div>
+  <div class="bar-nav">
+    <a class="btn" id="barPrev" href="../index.html" aria-label="Předchozí kapitola">←</a>
+    <a class="btn" href="../index.html">Přehled</a>
+    <a class="btn" id="barNext" href="06-presmerovani-a-roury.html" aria-label="Další kapitola">→</a>
+  </div>
+</div></div>
+
+<main class="wrap chapter">
+<header class="ch-head">
+  <div class="kicker">Kapitola 5 · bash</div>
+  <h1>Editory nano a vim</h1>
+  <p class="lead">Na serveru bez GUI upravujeme konfiguraci přímo v terminálu. nano je jednoduchý a ovládání vidíme na obrazovce. vim je rychlý pro zkušené a je k dispozici téměř všude.</p>
+</header>
+<div class="grid">
+  <article class="card c5"><h2>nano</h2>
+<pre>$ nano poznamky.txt
+$ sudo nano /etc/hosts        <span class="cm"># systémový soubor</span>
+$ nano -l skript.sh           <span class="cm"># s čísly řádků</span></pre>
+    <p class="muted">Znak <code>^</code> ve spodní liště znamená <span class="kbd">Ctrl</span>, <code>M-</code> znamená <span class="kbd">Alt</span>.</p>
+    <div class="tbl"><table>
+      <tr><th>Klávesy</th><th>Akce</th></tr>
+      <tr><td><span class="kbd">Ctrl+O</span></td><td>uložit (Write Out), potvrdit <span class="kbd">Enter</span></td></tr>
+      <tr><td><span class="kbd">Ctrl+X</span></td><td>ukončit (zeptá se na uložení)</td></tr>
+      <tr><td><span class="kbd">Ctrl+W</span></td><td>hledat</td></tr>
+      <tr><td><span class="kbd">Ctrl+\</span></td><td>najít a nahradit</td></tr>
+      <tr><td><span class="kbd">Ctrl+K</span> / <span class="kbd">Ctrl+U</span></td><td>vyjmout řádek / vložit</td></tr>
+      <tr><td><span class="kbd">Alt+U</span> / <span class="kbd">Alt+E</span></td><td>zpět / znovu</td></tr>
+      <tr><td><span class="kbd">Ctrl+_</span></td><td>skok na řádek</td></tr>
+      <tr><td><span class="kbd">Ctrl+G</span></td><td>nápověda</td></tr>
+    </table></div>
+  </article>
+  <article class="card c7"><h2>vim — režimy</h2>
+    <p>Klíč k vimu: klávesy dělají různé věci podle toho, v jakém režimu jsme. Po spuštění jsme v <b>normálním režimu</b>, kde se nepíše text, ale zadávají příkazy.</p>
+    <div class="modes">
+      <div class="mode"><b>Normální</b><span>pohyb, mazání, kopírování. Návrat odkudkoli: <span class="kbd">Esc</span></span></div>
+      <div class="mode"><b>Vkládací (INSERT)</b><span>psaní textu. Vstup: <span class="kbd">i</span> <span class="kbd">a</span> <span class="kbd">o</span></span></div>
+      <div class="mode"><b>Příkazový</b><span>uložit, ukončit, nahradit. Vstup: <span class="kbd">:</span></span></div>
+      <div class="mode"><b>Vizuální</b><span>označení textu. Vstup: <span class="kbd">v</span> <span class="kbd">V</span></span></div>
+    </div>
+    <div class="flow"><span>vim soubor</span><i>→</i><span>i</span><i>→</i><span>píšu text</span><i>→</i><span>Esc</span><i>→</i><span>:wq</span><i>→</i><span>Enter</span></div>
+    <div class="callout"><b>Jak ukončit vim bez uložení:</b> <span class="kbd">Esc</span> a pak <code>:q!</code> <span class="kbd">Enter</span>. Pro první seznámení spusťte interaktivní kurz <code>vimtutor</code>.</div>
+  </article>
+
+  <article class="card c7"><h2>vim — nejdůležitější příkazy</h2>
+    <div class="tbl"><table>
+      <tr><th>Normální režim</th><th>Akce</th><th>Příkazový režim</th><th>Akce</th></tr>
+      <tr><td><code>h j k l</code></td><td>pohyb ← ↓ ↑ →</td><td><code>:w</code></td><td>uložit</td></tr>
+      <tr><td><code>gg</code> / <code>G</code></td><td>začátek / konec souboru</td><td><code>:q</code></td><td>ukončit</td></tr>
+      <tr><td><code>0</code> / <code>$</code></td><td>začátek / konec řádku</td><td><code>:wq</code> nebo <code>ZZ</code></td><td>uložit a ukončit</td></tr>
+      <tr><td><code>x</code></td><td>smazat znak</td><td><code>:q!</code></td><td>ukončit bez uložení</td></tr>
+      <tr><td><code>dd</code> / <code>3dd</code></td><td>smazat (vyjmout) řádek / 3 řádky</td><td><code>:42</code></td><td>skok na řádek 42</td></tr>
+      <tr><td><code>yy</code> / <code>p</code></td><td>kopírovat řádek / vložit</td><td><code>:set number</code></td><td>čísla řádků</td></tr>
+      <tr><td><code>u</code> / <code>Ctrl+R</code></td><td>zpět / znovu</td><td><code>:%s/old/new/g</code></td><td>nahradit vše v souboru</td></tr>
+      <tr><td><code>/text</code>, <code>n</code></td><td>hledat, další výskyt</td><td><code>:syntax on</code></td><td>zvýraznění syntaxe</td></tr>
+    </table></div>
+  </article>
+  <article class="card c5"><h2>Porovnání</h2>
+    <div class="tbl"><table>
+      <tr><th></th><th>nano</th><th>vim</th></tr>
+      <tr><td>Učení</td><td>okamžitě</td><td>delší, odmění se</td></tr>
+      <tr><td>Ovládání</td><td>klávesové zkratky s Ctrl</td><td>režimy a příkazy</td></tr>
+      <tr><td>Dostupnost</td><td>Debian, Ubuntu v základu</td><td>skoro všude (aspoň <code>vi</code>)</td></tr>
+      <tr><td>Síla</td><td>drobné úpravy</td><td>makra, regex, pluginy</td></tr>
+      <tr><td>Kdy</td><td>rychlá úprava konfigurace</td><td>každodenní práce, programování</td></tr>
+    </table></div>
+<pre># výchozí editor systému (např. pro visudo, crontab)
+$ sudo update-alternatives --config editor
+$ export EDITOR=nano     <span class="cm"># jen pro tento shell</span></pre>
+  </article>
+</div>
+</main>
+
+
+<div class="wrap"><nav class="pager" id="pager"></nav></div>
+<footer>Výuková prezentace · Úvod do operačních systémů · Unix-like OS · vizuální styl vychází z design systému VOŠ, SPŠ a SOŠ Varnsdorf.</footer>
+
+<script src="../js/app.js"></script>
+</body>
+</html>

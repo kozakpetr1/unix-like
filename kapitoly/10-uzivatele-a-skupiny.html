@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Správa uživatelů a skupin · Unix-like operační systémy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-chapter="10">
+
+<div class="bar"><div class="bar-in">
+  <a class="brand" href="../index.html">Unix-like <span>OS</span></a>
+  <div class="bar-ch" id="barTitle">10 · Správa uživatelů a skupin</div>
+  <div class="bar-nav">
+    <a class="btn" id="barPrev" href="../index.html" aria-label="Předchozí kapitola">←</a>
+    <a class="btn" href="../index.html">Přehled</a>
+    <a class="btn" id="barNext" href="11-opravneni.html" aria-label="Další kapitola">→</a>
+  </div>
+</div></div>
+
+<main class="wrap chapter">
+<header class="ch-head">
+  <div class="kicker">Kapitola 10 · Správa systému</div>
+  <h1>Správa uživatelů a skupin</h1>
+  <p class="lead">Účty a skupiny jsou obyčejné řádky v textových souborech. Nástroje níže je upravují bezpečně a hlídají, aby soubory zůstaly konzistentní.</p>
+</header>
+<div class="grid">
+  <article class="card c7"><h2>Kde jsou uživatelé uloženi</h2>
+<pre>$ grep alice /etc/passwd
+<span class="out">alice:x:1001:1001:Alice Nováková,,,:/home/alice:/bin/bash</span>
+  │    │  │    │        │               │           └ shell
+  │    │  │    │        │               └ domovský adresář
+  │    │  │    │        └ celé jméno (GECOS)
+  │    │  │    └ GID primární skupiny
+  │    │  └ UID
+  │    └ heslo je jinde (x → /etc/shadow)
+  └ login</pre>
+    <div class="tbl"><table>
+      <tr><td><code>/etc/passwd</code></td><td>účty, čitelné pro všechny</td></tr>
+      <tr><td><code>/etc/shadow</code></td><td>hashe hesel a jejich platnost, jen pro root</td></tr>
+      <tr><td><code>/etc/group</code></td><td>skupiny a jejich členové</td></tr>
+      <tr><td><code>/etc/skel/</code></td><td>šablona obsahu nového domovského adresáře</td></tr>
+    </table></div>
+    <p class="muted">UID 0 = root, 1–999 = systémové účty služeb, od 1000 = běžní uživatelé.</p>
+  </article>
+  <article class="card c5"><h2>Kdo jsem a kdo je přihlášen</h2>
+<pre>$ whoami
+$ id alice
+<span class="out">uid=1001(alice) gid=1001(alice) skupiny=1001(alice),27(sudo)</span>
+$ groups
+$ who            <span class="cm"># přihlášení uživatelé</span>
+$ w              <span class="cm"># … a co dělají</span>
+$ last -n 5      <span class="cm"># poslední přihlášení</span>
+$ getent passwd alice</pre>
+  </article>
+
+  <article class="card c6"><h2>Vytvoření uživatele</h2>
+    <h3>adduser — interaktivní, doporučeno v Debianu</h3>
+<pre>$ sudo adduser jan
+<span class="out">Adding user `jan' ...
+Creating home directory `/home/jan' ...
+New password:</span> ********
+<span class="out">Full Name []:</span> Jan Novák</pre>
+    <h3>useradd — nízkoúrovňový, pro skripty</h3>
+<pre>$ sudo useradd -m -s /bin/bash -c "Jan Novák" -G users jan
+$ sudo passwd jan
+<span class="cm"># -m domovský adresář, -s shell, -c komentář, -G další skupiny</span></pre>
+    <div class="callout">Bez <code>-m</code> a <code>-s</code> vytvoří <code>useradd</code> účet bez domovského adresáře a se shellem <code>/bin/sh</code>.</div>
+  </article>
+  <article class="card c6"><h2>Úprava účtu — usermod</h2>
+    <div class="syntax"><b>usermod</b> <i>[volby]</i> <em>uživatel</em></div>
+<pre>$ sudo usermod -aG docker jan         <span class="cm"># přidat do skupiny (-a = append!)</span>
+$ sudo usermod -s /bin/zsh jan        <span class="cm"># změnit shell</span>
+$ sudo usermod -c "Jan Novák, 3.B" jan
+$ sudo usermod -l jnovak jan          <span class="cm"># přejmenovat login</span>
+$ sudo usermod -d /home/jnovak -m jnovak   <span class="cm"># přesunout domov</span>
+$ sudo usermod -e 2027-06-30 jnovak   <span class="cm"># účet vyprší</span>
+$ sudo usermod -L jnovak              <span class="cm"># zamknout</span>
+$ sudo usermod -U jnovak              <span class="cm"># odemknout</span></pre>
+    <div class="callout warn"><code>usermod -G skupina</code> bez <code>-a</code> uživatele <b>odebere ze všech ostatních</b> doplňkových skupin, třeba i ze <code>sudo</code>.</div>
+  </article>
+
+  <article class="card c6"><h2>Hesla a jejich platnost</h2>
+<pre>$ passwd                     <span class="cm"># změnit vlastní heslo</span>
+$ sudo passwd jan            <span class="cm"># nastavit heslo jinému</span>
+$ sudo passwd -e jan         <span class="cm"># vynutit změnu při příštím přihlášení</span>
+$ sudo passwd -l jan         <span class="cm"># zamknout heslo</span>
+$ sudo passwd -S jan         <span class="cm"># stav hesla</span>
+
+$ sudo chage -l jan          <span class="cm"># přehled platnosti</span>
+$ sudo chage -M 90 -W 7 jan  <span class="cm"># max. 90 dní, varovat 7 dní předem</span></pre>
+  </article>
+  <article class="card c6"><h2>Skupiny a smazání účtu</h2>
+<pre>$ sudo addgroup ucitele               <span class="cm"># nebo groupadd</span>
+$ sudo adduser jan ucitele            <span class="cm"># přidat člena (Debian)</span>
+$ sudo gpasswd -a jan ucitele         <span class="cm"># přidat člena</span>
+$ sudo gpasswd -d jan ucitele         <span class="cm"># odebrat člena</span>
+$ sudo groupmod -n vyuka ucitele      <span class="cm"># přejmenovat skupinu</span>
+$ sudo delgroup vyuka                 <span class="cm"># smazat skupinu</span>
+$ getent group sudo                   <span class="cm"># členové skupiny</span>
+
+$ sudo deluser jan                    <span class="cm"># smazat účet, data zůstanou</span>
+$ sudo deluser --remove-home jan      <span class="cm"># i s domovským adresářem</span>
+$ sudo userdel -r jan                 <span class="cm"># totéž nízkoúrovňově</span></pre>
+    <p class="muted">Změna členství ve skupinách se projeví po novém přihlášení (nebo <code>newgrp skupina</code>).</p>
+  </article>
+</div>
+</main>
+
+
+<div class="wrap"><nav class="pager" id="pager"></nav></div>
+<footer>Výuková prezentace · Úvod do operačních systémů · Unix-like OS · vizuální styl vychází z design systému VOŠ, SPŠ a SOŠ Varnsdorf.</footer>
+
+<script src="../js/app.js"></script>
+</body>
+</html>
